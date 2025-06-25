@@ -9,11 +9,11 @@ LIGHTTPD_CONF_FILE="$LIGHTTPD_CONF_DIR/80-sing-box-go.conf"
 ip_addres=$(ip addr show br0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
 echo "Отказ от ответственности:"
 echo ""
-echo "Автор проекта NeoFit WebUI снимает с себя любую ответственность за любые неправомерные действия пользователя"
+echo "Автор проекта NeoFit WebUI снимает с себя любую ответственность за любые неправомерные действия пользователя."
 echo ""
 echo "При использовании данного софта в неправомерных целях пользователь сам несет ответственность за свои действия."
 echo ""
-echo "Если пользователь не согласен с заявлением выше, пользователь обязан прервать установку софта нажав ^C либо закрыв терминал"
+echo "Если пользователь не согласен с заявлением выше, пользователь обязан прервать установку софта нажав ^C либо закрыв терминал!"
 sleep 5
 echo ""
 echo "Начинаем установку NeoFit WebUI..."
@@ -35,7 +35,7 @@ if ! opkg update >/dev/null 2>&1; then
     echo "[*] Пробуем задать DNS и запустить скрипт заново..."
     ndmc -c "dns-proxy tls upstream 9.9.9.9 sni dns.quad9.net" >/dev/null 2>&1
     ndmc -c "system configuration save" >/dev/null 2>&1
-    curl -o /opt/root/sing-box-go.sh https://raw.githubusercontent.com/pegakmop/pegakmop.github.io/main/entware/sing-box-go.sh && chmod +x /opt/root/sing-box-go.sh && /opt/root/sing-box-go.sh
+    curl -o /opt/root/sing-box-go.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-install.sh && chmod +x /opt/root/sing-box-go.sh && /opt/root/sing-box-go.sh
     exit 1
 fi
 echo ""
