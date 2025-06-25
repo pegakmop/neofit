@@ -216,7 +216,7 @@ window.addEventListener("DOMContentLoaded", () => {
             checked
           >
           <label class="form-check-label" for="includeClashApi">
-            Включить Clash API (веб-интерфейс)
+            Веб интерфейс на порту :9090
           </label>
         </div>
 
