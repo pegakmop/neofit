@@ -7,5 +7,5 @@ curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/re
 ```
 Удалить можно командой:
 ```
-/opt/etc/init.d/S80lighttpd stop && /opt/etc/init.d/S99sing-box stop && rm -rf /opt/share/www/sing-box-go && rm -rf /opt/etc/sing-box/config.json && opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl php8-mod-session sing-box-go jq
+/opt/etc/init.d/S80lighttpd stop && /opt/etc/init.d/S99sing-box stop && rm -rf /opt/etc/lighttpd && rm -rf /opt/share/www/sing-box-go && rm -rf /opt/etc/sing-box/config.json && opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl php8-mod-session sing-box-go jq
 ```
