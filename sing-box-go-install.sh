@@ -110,13 +110,21 @@ $SERVER["socket"] == ":94" {
 EOF
 
 echo "[*] Установка прав и перезапуск..."
-ln -sf /opt/etc/init.d/S80lighttpd /opt/bin/neofit
+ln -sf /opt/etc/init.d/S80lighttpd /opt/bin/neofitweb
 /opt/etc/init.d/S80lighttpd restart
-echo "[*] Установка завершена."
+echo "[*] Для перезапуска панели в терминале команда: neofitweb restart"
 echo "[*] Установщик веб панели удален."
 rm "$0"
 echo ""
-echo "sing-box-go neofit create @pegakmop installed"
+echo "[*] NeoFit WebUi для sing-box-go create @pegakmop installed"
 echo ""
-echo "Перейдите на http://$ip_addres:94"
+echo "[*] Перейдите на http://$ip_addres:94"
 echo ""
+sleep 3
+echo "*******************************************"
+echo "https://goo.su/Enqdz34 - VPS в Финляндии с 60% скидкой (промокод OFF60)"
+echo "*******************************************"
+echo "https://goo.su/QAQFzE9 - VPS в Европе и не только (15% бонус 24 часа)"
+echo "*******************************************"
+echo "YouTube ссылка на видео с инструкцией: https://youtu.be/url_video"
+echo "*******************************************"
