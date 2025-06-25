@@ -5,7 +5,4 @@
 ```
 curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
-Удалить можно командой:
-```
-/opt/etc/init.d/S80lighttpd stop && /opt/etc/init.d/S99sing-box stop && rm -rf /opt/etc/lighttpd && rm -rf /opt/share/www/sing-box-go && rm -rf /opt/etc/sing-box/config.json && opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl php8-mod-session sing-box-go jq
-```
+Удалить можно форматировав флешку или внутренний накопитель роутера, убрав ентвар,мне лень писать аннигилятор.
