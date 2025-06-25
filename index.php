@@ -198,13 +198,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
         <div class="mb-3">
           <label for="links" class="form-label">
-            Прокси ссылки:
+            Прокси ссылки для config.json:
           </label>
           <textarea
             id="links"
             class="form-control"
             rows="8"
-            placeholder="ss://, vless://, vmess://, trojan://, tuic:// и т.д. Каждый добавленный ключ должен быть с новой строки!"
+            placeholder="ss://, vless://, vmess://, trojan://, tuic:// Каждый добавленный ключ должен быть с новой строки!"
           ></textarea>
         </div>
 
@@ -229,7 +229,7 @@ window.addEventListener("DOMContentLoaded", () => {
             id="pasteBtn"
             class="btn btn-outline-secondary btn-sm"
             onclick="pasteClipboard()"
-          >📋 Вставить</button>
+          >📋 Вставить url</button>
           <button
             id="updateBtn"
             class="btn btn-outline-danger d-none"
