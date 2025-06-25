@@ -5,3 +5,7 @@
 ```
 curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
+Удалить можно командой:
+```
+rm
+```
