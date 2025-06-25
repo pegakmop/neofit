@@ -3,7 +3,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
 
     // 📦 Проверка и установка обновления интерфейса
-    $currentVersion    = "0.0.0.4";
+    $currentVersion    = "0.0.0.5";
     $remoteVersionUrl  = "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-version.txt";
     $context           = stream_context_create(["http" => ["timeout" => 3]]);
     $remoteContent     = @file_get_contents($remoteVersionUrl, false, $context);
