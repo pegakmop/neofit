@@ -3,7 +3,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
 
     // 📦 Проверка и установка обновления интерфейса
-    $currentVersion    = "0.0.0.5";
+    $currentVersion    = "0.0.0.6";
     $remoteVersionUrl  = "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-version.txt";
     $context           = stream_context_create(["http" => ["timeout" => 3]]);
     $remoteContent     = @file_get_contents($remoteVersionUrl, false, $context);
@@ -221,6 +221,7 @@ SH;
     color: var(--highlight);
     border-color: var(--highlight);
   }
+    
 [data-theme="dark"] .modal-content {
   background-color: var(--card-bg);
   color: var(--text);
@@ -731,8 +732,8 @@ window.addEventListener("DOMContentLoaded", () => {
         out.textContent += "\n✅ Ответ роутера:\n" + data.message +
                            "\n🚀 Перезапускаем sing-box:\n" + data.restart +
                            "\n📟 Статус:\n" + data.status +
-                           "\n🌐 Внешний IP: " + data.external_ip +
-                           "\n🛡️ Proxy IP: " + data.proxy_ip +
+                           "\n🌐 Провайдерский IP: " + data.external_ip +
+                           "\n🛡️ Proxy0 IP: " + data.proxy_ip +
                            ((data.proxy_ip && data.proxy_ip !== data.external_ip)
                              ? "\n🎯 Прокси работает!"
                              : "\n❌ Прокси не работает") +
@@ -754,10 +755,12 @@ window.addEventListener("DOMContentLoaded", () => {
         'ndmc -c "interface Proxy0" >/dev/null 2>&1',
         `ndmc -c "interface Proxy0 description Sing-Box-Proxy0-${routerIp}:1080" >/dev/null 2>&1`,
         'ndmc -c "interface Proxy0 proxy protocol socks5" >/dev/null 2>&1',
+        'ndmc -c "interface Proxy0 proxy socks5-udp" >/dev/null 2>&1',
         `ndmc -c "interface Proxy0 proxy upstream ${routerIp} 1080" >/dev/null 2>&1`,
         'ndmc -c "interface Proxy0 up" >/dev/null 2>&1',
         'ndmc -c "interface Proxy0 ip global 1" >/dev/null 2>&1',
         'ndmc -c "system configuration save" >/dev/null 2>&1',
+        'ndmc -c "no interface Proxy0 ipv6 address" >/dev/null 2>&1',
         'sleep 2',
         'ndmc -c "show interface Proxy0"',
         'curl -s --interface t2s0 myip.wtf',
@@ -771,7 +774,7 @@ window.addEventListener("DOMContentLoaded", () => {
       .then(res => res.text())
       .then(txt => out.textContent += "\n⌛️ Состояние установки прокси:\n" + "✅  Proxy0 установка завершена.")
       // либо выше закомментировать, а ниже рас комментировать строку: .then(txt => out.textContent +=  для видимости полных логов, либо наоборот чтобы не было логов.
-     // .then(txt => out.textContent += "\n⌛️Состояние установки прокси:\n" + txt)
+      //.then(txt => out.textContent += "\n⌛️Состояние установки прокси:\n" + txt)
       .catch(e => out.textContent += "\n❌ Ошибка:\n" + e);
     }
 
@@ -785,8 +788,8 @@ window.addEventListener("DOMContentLoaded", () => {
       })
       .then(res => res.json())
       .then(d => {
-        out.textContent += `\n🌐 Внешний IP: ${d.external_ip}` +
-                           `\n🛡️ Proxy IP: ${d.proxy_ip}` +
+        out.textContent += `\n🌐 Провайдерский IP: ${d.external_ip}` +
+                           `\n🛡️ Proxy0 IP: ${d.proxy_ip}` +
                            ((d.proxy_ip && d.proxy_ip !== d.external_ip)
                              ? "\n🎯 Прокси работает!"
                              : "\n❌ Прокси не работает");
