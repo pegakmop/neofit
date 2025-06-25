@@ -289,7 +289,7 @@ window.addEventListener("DOMContentLoaded", () => {
             id="links"
             class="form-control"
             rows="8"
-            placeholder="ss://, vless://, vmess://, trojan://, tuic:// Каждый добавленный ключ должен быть с новой строки!"
+            placeholder="ss://, vless:// Каждый добавленный ключ должен быть с новой строки!"
           ></textarea>
         </div>
 
