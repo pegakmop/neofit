@@ -302,7 +302,7 @@ window.addEventListener("DOMContentLoaded", () => {
             checked
           >
           <label class="form-check-label" for="includeClashApi">
-            Веб интерфейс на порту :9090
+            Веб интерфейс <button onclick="goTo9090()">панель Sing-Box</button>
           </label>
         </div>
 
@@ -884,5 +884,12 @@ window.addEventListener("DOMContentLoaded", () => {
   document.documentElement.setAttribute("data-theme", savedTheme);
 });
   </script>
+  <script>
+  function goTo9090() {
+    const loc = window.location;
+    const newUrl = `${loc.protocol}//${loc.hostname}:9090${loc.pathname}${loc.search}${loc.hash}`;
+    window.location.href = newUrl;
+  }
+</script
 </body>
 </html>
