@@ -253,7 +253,7 @@ SH;
       <div class="text-end mb-3">
       </div> 
         <h3 class="card-title mb-4" <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
-    🌓 NeoFit для Sing-box
+   👉 🌓 👈 NeoFit для Sing-box
   </button></h3>
 
 <div class="mb-3">
