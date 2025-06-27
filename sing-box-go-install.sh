@@ -132,7 +132,11 @@ echo "[*] NeoFit WebUi для sing-box-go create by @pegakmop installed"
 echo ""
 echo "[*] Перейдите на http://$ip_addres:94"
 echo ""
-sleep 3
+echo "Угостить кофем разработчика скинув донат:"
+echo ""
+echo "https://yoomoney.ru/to/410012481566554 юмани"
+echo "2200700768833807 карта тинькоф"
+sleep 5
 echo "Эксклюзивно для блогера обзоров на YouTube, для канала @antenkaru"
 echo "****************************************"
 echo "https://goo.su/Enqdz34 - VPS в Финляндии с 60% скидкой (промокод OFF60)"
