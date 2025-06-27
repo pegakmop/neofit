@@ -139,5 +139,5 @@ echo "https://goo.su/Enqdz34 - VPS в Финляндии с 60% скидкой (
 echo "****************************************"
 echo "https://goo.su/QAQFzE9 - VPS в Европе и не только (15% бонус 24 часа)"
 echo "****************************************"
-echo "YouTube ссылка на видео с инструкцией: https://youtube.com/@antenkaru"
+echo "YouTube ссылка на видео с инструкцией: https://youtu.be/EHmUf2Q9BIw"
 echo "****************************************"
