@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           . '-o /opt/share/www/sing-box-go/index.php 2>&1'
         );
         echo json_encode([
-            'message' => '✔ NeoFit WebUI установил обновления. Перезагружаю веб страницу.',
+            'message' => '✔ NeoFit WebUI установил обновления. Перезагружаю веб страницу. Вы можете теперь угостить меня ☕️ кофе',
             'log'     => $out
         ]);
         exit;
