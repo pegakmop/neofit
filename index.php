@@ -305,6 +305,7 @@ window.addEventListener("DOMContentLoaded", () => {
             Веб интерфейс <button onclick="goTo9090()">панель Sing-Box</button>
           </label>
         </div>
+          <div id="warnings" class="text-danger mb-3"></div>
 
         <div class="d-flex gap-2 mb-3">
           <button
@@ -340,7 +341,6 @@ window.addEventListener("DOMContentLoaded", () => {
   id="ipv6Btn"
   class="btn btn-danger d-none"
   onclick="disableIPv6()">🛠 Отключить IPv6 оставив only IPv4</button>
-        <div id="warnings" class="text-danger mb-3"></div>
 
         <div id="resultWrapper" class="d-none">
           <h5>Результат:</h5>
