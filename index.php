@@ -2,8 +2,16 @@
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
 
+    // 📌 Проверка наличия компонента proxy
+    if (isset($input['check_proxy_component'])) {
+    $check = shell_exec("ndmc -c \"components list\" | grep -A 10 'name: proxy' | grep -q 'installed:' && echo '✅ Клиент прокси установлен.\n⏳ Начинаю установку Proxy0.' || echo '❌ Компонент клиент прокси не установлен.\n❗️ Установка Proxy0 отменена.'; ndmc -c \"exit\" >/dev/null 2>&1");
+    echo $check;
+    exit;
+}
+
+
     // 📦 Проверка и установка обновления интерфейса
-    $currentVersion    = "0.0.0.7";
+    $currentVersion    = "0.0.0.8";
     $remoteVersionUrl  = "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-version.txt";
     $context           = stream_context_create(["http" => ["timeout" => 3]]);
     $remoteContent     = @file_get_contents($remoteVersionUrl, false, $context);
@@ -52,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         exit;
     }
+    
 
     // Повторная проверка IP (proxy)
     if (isset($input['check_only'])) {
@@ -744,12 +753,25 @@ window.addEventListener("DOMContentLoaded", () => {
       .catch(e => out.textContent += "\n❌ Ошибка запроса:\n" + e);
     }
 
-    function installProxy() {
-      const routerIp = document.getElementById("router").value.trim();
-      const modal    = new bootstrap.Modal(document.getElementById('installModal'));
-      const out      = document.getElementById("installOutput");
-      out.textContent = "⏳Установка Proxy0...";
-      modal.show();
+function installProxy() {
+  const routerIp = document.getElementById("router").value.trim();
+  const modal    = new bootstrap.Modal(document.getElementById('installModal'));
+  const out      = document.getElementById("installOutput");
+  out.textContent = "🔍 Проверка установлен ли на роутере Keenetic компонент  клиент прокси...\n⚠️Позволяет устанавливать соединения через SOCKS/HTTPS/HTTP-прокси с данного устройства.";
+  modal.show();
+
+  // Сначала проверим наличие компонента proxy
+  fetch(getPostUrl(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ check_proxy_component: true })
+  })
+  .then(res => res.text())
+  .then(txt => {
+    out.textContent += "\n" + txt;
+
+    if (txt.includes("✅")) {
+      out.textContent += "\n⏳ Установка Proxy0...";
       const cmds = [
         'ndmc -c "no interface Proxy0" >/dev/null 2>&1',
         'ndmc -c "system configuration save" >/dev/null 2>&1',
@@ -767,18 +789,23 @@ window.addEventListener("DOMContentLoaded", () => {
         'curl -s --interface t2s0 myip.wtf',
         'Установка прокси завершена, установите конфиг >/dev/null 2>&1'
       ];
+
+      // Установка
       fetch(getPostUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proxy_commands: cmds })
       })
       .then(res => res.text())
-      .then(txt => out.textContent += "\n⌛️ Состояние установки прокси:\n" + "✅  Proxy0 установка завершена.")
-      // либо выше закомментировать, а ниже рас комментировать строку: .then(txt => out.textContent +=  для видимости полных логов, либо наоборот чтобы не было логов.
-      //.then(txt => out.textContent += "\n⌛️Состояние установки прокси:\n" + txt)
+      .then(txt => out.textContent += "\n⌛️ Состояние установки прокси:\n✅ Proxy0 установка завершена.")
       .catch(e => out.textContent += "\n❌ Ошибка:\n" + e);
-    }
 
+    } else {
+      out.textContent += "\n⛔️ Установка отменена.";
+    }
+  })
+  .catch(e => out.textContent += "\n❌ Ошибка при проверке компонента proxy:\n" + e);
+}
     function recheckProxy() {
       const out = document.getElementById("installOutput");
       out.textContent += "\n🔄 Повторная проверка IP…";
