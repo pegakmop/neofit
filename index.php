@@ -4,7 +4,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 📌 Проверка наличия компонента proxy
     if (isset($input['check_proxy_component'])) {
-    $check = shell_exec("ndmc -c \"components list\" | grep -A 10 'name: proxy' | grep -q 'installed:' && echo '✅ Клиент прокси установлен.\n⏳ Начинаю установку Proxy0.' || echo '❌ Компонент клиент прокси не установлен.\n❗️ Установка Proxy0 отменена.\n⚠️Параметры системы > Изменить набор компонентов > клиент прокси > установить!'; ndmc -c \"exit\" >/dev/null 2>&1");
+    $check = shell_exec("ndmc -c \"components list\" | grep -A 10 'name: proxy' | grep -q 'installed:' && echo '✅ Клиент прокси установлен.\n⏳ Начинаю установку Proxy0.' || echo '❌ Компонент клиент прокси не установлен.\n❗️ Установка Proxy0 отменена.\n⚠️В веб интерфейсе роутера Keenetic заходим в Параметры системы > Изменить набор компонентов >> Клиент прокси >>> Поставить галочку и сохранить, роутер перезагрузится и установит компонент!'; ndmc -c \"exit\" >/dev/null 2>&1");
     echo $check;
     exit;
 }
