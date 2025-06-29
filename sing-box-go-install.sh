@@ -138,6 +138,9 @@ echo "https://yoomoney.ru/to/410012481566554  кошелек юмани"
 echo "2200700768833807 карта тинькоф"
 echo ""
 sleep 5
+echo "Канал в телеграм: https://t.me/neofitkeenetic"
+echo ""
+sleep 3
 echo "Эксклюзивно для блогера обзоров на YouTube, для канала @antenkaru"
 echo "****************************************"
 echo "https://goo.su/Enqdz34 - VPS в Финляндии с 60% скидкой (промокод OFF60)"
