@@ -4,14 +4,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 📌 Проверка наличия компонента proxy
     if (isset($input['check_proxy_component'])) {
-    $check = shell_exec("ndmc -c \"components list\" | grep -A 10 'name: proxy' | grep -q 'installed:' && echo '✅ Клиент прокси установлен.\n⏳ Начинаю установку Proxy0.' || echo '❌ Компонент клиент прокси не установлен.\n❗️ Установка Proxy0 отменена.\n⚠️В веб интерфейсе роутера Keenetic заходим в Параметры системы > Изменить набор компонентов >> Клиент прокси >>> Поставить галочку и сохранить, роутер перезагрузится и установит компонент!'; ndmc -c \"exit\" >/dev/null 2>&1");
-    echo $check;
+    $success = false;
+
+    for ($i = 0; $i < 3; $i++) {
+        $output = shell_exec("ndmc -c \"components list\" 2>&1");
+        if (strpos($output, "name: proxy") !== false && strpos($output, "installed:") !== false) {
+            $success = true;
+            break;
+        }
+        usleep(500000); // подождать полсекунды и попробовать снова
+    }
+
+    if ($success) {
+        echo "✅ Клиент прокси установлен.\n⏳ Начинаю установку Proxy0.";
+    } else {
+        echo "❌ Компонент клиент прокси не установлен.\n❗️ Установка Proxy0 отменена.\n⚠️ В веб интерфейсе роутера Keenetic заходим во вкладку > Параметры системы >> Изменить набор компонентов >>> Клиент прокси >>>> Поставить галочку и сохранить, роутер перезагрузится и установит компонент!";
+    }
+
     exit;
 }
 
 
     // 📦 Проверка и установка обновления интерфейса
-    $currentVersion    = "0.0.0.9";
+    $currentVersion    = "0.0.0.10";
     $remoteVersionUrl  = "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-version.txt";
     $context           = stream_context_create(["http" => ["timeout" => 3]]);
     $remoteContent     = @file_get_contents($remoteVersionUrl, false, $context);
@@ -55,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           . '-o /opt/share/www/sing-box-go/index.php 2>&1'
         );
         echo json_encode([
-            'message' => '✔ NeoFit WebUI установил обновления. Перезагружаю веб страницу. Вы можете теперь угостить меня ☕️ кофе',
+            'message' => '✔ NeoFit WebUI установил обновления. Перезагружаю веб страницу. Вы можете теперь угостить меня ☕️ кофе, заодно поддержав этим стимул фиксить баги и выпускать обновления быстрее, с помощью кнопок юмани или Тинькофф ссылки.',
             'log'     => $out
         ]);
         exit;
@@ -293,14 +308,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
         <div class="mb-3">
           <label for="links" class="form-label">
-            Прокси ссылки для config.json:
+            Прокси ссылки ключи для config.json:
           </label>
           <textarea
             id="links"
             class="form-control"
             rows="8"
-            placeholder="ss://, vless:// Каждый добавленный ключ должен быть с новой строки!"
-          ></textarea>
+            placeholder="ss://, vless:// Каждый добавленный ключ должен быть с новой строки, пробелы недопустимы, только перенос с новой строки! Пример ниже:
+ss://тутпервыйключ
+vless://тутследующийключ
+          "></textarea>
         </div>
 
         <div class="form-check mb-3">
@@ -311,46 +328,40 @@ window.addEventListener("DOMContentLoaded", () => {
             checked
           >
           <label class="form-check-label" for="includeClashApi">
-            Веб интерфейс <button onclick="goTo9090()">панель Sing-Box</button>
+            <button id="goTo9090Btn" class="btn btn-sm btn-outline-primary d-none" onclick="goTo9090()"> Веб интерфейс Sing-Box </button>
+
           </label>
         </div>
+        <button  
+            id="updateBtn"
+            class="btn btn-outline-danger d-none"
+            onclick="runUpdate()"
+          >⬇️ Обновить веб интерфейс</button>
           <div id="warnings" class="text-danger mb-3"></div>
+          <button><a href="https://yoomoney.ru/to/410012481566554">на ☕️ Юмани</a></button>
+        <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">на ☕️Тинькофф</a></button> </br></br>
 
         <div class="d-flex gap-2 mb-3">
           <button
             class="btn btn-primary"
             onclick="generateConfig()"
-          >Сгенерировать config.json</button>
+          >Установить на Кинетик</button>
           <button
             id="pasteBtn"
             class="btn btn-outline-secondary btn-sm"
             onclick="pasteClipboard()"
           >📋 Вставить url</button>
           <button
-            id="updateBtn"
-            class="btn btn-outline-danger d-none"
-            onclick="runUpdate()"
-          >⬇️ Обновить веб интерфейс</button>
-        </div>
-        <button><a href="https://yoomoney.ru/to/410012481566554">☕️ на Юмани</a></button>
-        <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">☕️ на Тинькофф</a></button> </br></br>
-        <div class="d-flex gap-2 mb-3">
-          <button 
-            id="proxyBtn"
-            class="btn btn-info d-none"
-            onclick="installProxy()"
-          >🧩 Установить Proxy0</button>
-          <button  
-            id="installBtn"
-            class="btn btn-warning d-none"
-            onclick="installConfig()"
-          >📦 Установить config.json</button>
-          <button id="installAllBtn" class="btn btn-success d-none" onclick="installAll()">🚀 Установить Proxy0 + config.json</button>
-        </div> 
-        <button
   id="ipv6Btn"
   class="btn btn-danger d-none"
-  onclick="disableIPv6()">🛠 Отключить IPv6 оставив only IPv4</button>
+  onclick="disableIPv6()">Отключить: Протокол IPv6</button>
+        </div>
+        <div class="d-flex gap-2 mb-3">
+          <button hidden 
+          id="installAllBtn" 
+          class="btn btn-success d-none"
+          onclick="installAll()">🚀 Установить Proxy0 + config.json</button>
+        </div>
 
         <div id="resultWrapper" class="d-none">
           <h5>Результат:</h5>
@@ -364,12 +375,12 @@ window.addEventListener("DOMContentLoaded", () => {
               id="downloadBtn"
               class="btn btn-success d-none"
               download="config.json"
-            >⬇ Скачать config.json</a>
+            >⬇ Скачать на устройство</a></br></br>
             <button
               id="copyBtn"
               class="btn btn-secondary d-none"
               onclick="copyConfig()"
-            >Скопировать</button>
+            >Скопировать в буфер</button>
           </div>
         </div>
       </div>
@@ -386,7 +397,7 @@ window.addEventListener("DOMContentLoaded", () => {
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Установка на роутер</h5>
+        <h5 class="modal-title">Установка на Кинетик</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">✖️</button>
       </div>
       <div class="modal-body">
@@ -400,7 +411,7 @@ window.addEventListener("DOMContentLoaded", () => {
             id="recheckBtn"
             class="btn btn-outline-primary d-none"
             onclick="recheckProxy()"
-          >🔄 Проверка работы прокси по IP</button>
+          >🔄 Перепроверка работы прокси</button>
         </div>
       </div>
     </div>
@@ -612,7 +623,7 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (proxyLinks.length === 0) {
-        warningsDiv.innerHTML = "Ошибка: нужно хотя бы одну ссылку";
+        warningsDiv.innerHTML = "Ошибка: нужен хотя бы один ключ";
         return;
       }
 
@@ -707,6 +718,9 @@ window.addEventListener("DOMContentLoaded", () => {
         warningsDiv.innerHTML = warns.map(w => `– ${w}`).join("<br>");
       }
     }
+    
+    
+    
 
     function copyConfig() {
       const text = document.getElementById("result").textContent;
@@ -715,116 +729,12 @@ window.addEventListener("DOMContentLoaded", () => {
         .catch(e => alert("Ошибка копирования: " + e));
     }
 
-    function installConfig() {
-      const resultDiv = document.getElementById("result");
-      const cfg       = resultDiv.textContent;
-        if (!cfg) {
-          alert("❗️Ошибка установки config.json на роутер, нужно заполнить хотя бы одну прокси ссылку и нажать снова сгенерировать config.json и после уже нажать установить config.json");
-          return;
-        }
 
-      const modal     = new bootstrap.Modal(document.getElementById('installModal'));
-      const out       = document.getElementById("installOutput");
-      out.textContent = "📦 Отправка конфига на роутер...";
-      modal.show();
 
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: cfg })
-      })
-      .then(async res => {
-        if (!res.ok) {
-          const err = await res.text();
-          out.textContent += `\n❌ Ошибка:\n${err}`;
-          return;
-        }
-        const data = await res.json();
-        out.textContent += "\n✅ Ответ роутера:\n" + data.message +
-                           "\n🚀 Перезапускаем sing-box:\n" + data.restart +
-                           "\n📟 Статус:\n" + data.status +
-                           "\n🌐 Провайдерский IP: " + data.external_ip +
-                           "\n🛡️ Proxy0 IP: " + data.proxy_ip +
-                           ((data.proxy_ip && data.proxy_ip !== data.external_ip)
-                             ? "\n🎯 Прокси работает!"
-                             : "\n❌ Прокси не работает") +
-                           "\n🎉 Установка завершена!";
-        document.getElementById("recheckBtn").classList.remove("d-none");
-      })
-      .catch(e => out.textContent += "\n❌ Ошибка запроса:\n" + e);
-    }
 
-function installProxy() {
-  const routerIp = document.getElementById("router").value.trim();
-  const modal    = new bootstrap.Modal(document.getElementById('installModal'));
-  const out      = document.getElementById("installOutput");
-  out.textContent = "🔍 Проверка установлен ли на роутере Keenetic компонент  клиент прокси...\n⚠️Позволяет устанавливать соединения через SOCKS/HTTPS/HTTP-прокси с данного устройства.";
-  modal.show();
-
-  // Сначала проверим наличие компонента proxy
-  fetch(getPostUrl(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ check_proxy_component: true })
-  })
-  .then(res => res.text())
-  .then(txt => {
-    out.textContent += "\n" + txt;
-
-    if (txt.includes("✅")) {
-      out.textContent += "\n⏳ Установка Proxy0...";
-      const cmds = [
-        'ndmc -c "no interface Proxy0" >/dev/null 2>&1',
-        'ndmc -c "system configuration save" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0" >/dev/null 2>&1',
-        `ndmc -c "interface Proxy0 description NeoFit-Proxy0-${routerIp}:1080" >/dev/null 2>&1`,
-        'ndmc -c "interface Proxy0 proxy protocol socks5" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0 proxy socks5-udp" >/dev/null 2>&1',
-        `ndmc -c "interface Proxy0 proxy upstream ${routerIp} 1080" >/dev/null 2>&1`,
-        'ndmc -c "interface Proxy0 up" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0 ip global 1" >/dev/null 2>&1',
-        'ndmc -c "system configuration save" >/dev/null 2>&1',
-        'ndmc -c "no interface Proxy0 ipv6 address" >/dev/null 2>&1',
-        'sleep 2',
-        'ndmc -c "show interface Proxy0"',
-        'curl -s --interface t2s0 myip.wtf',
-        'Установка прокси завершена, установите конфиг >/dev/null 2>&1'
-      ];
-
-      // Установка
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proxy_commands: cmds })
-      })
-      .then(res => res.text())
-      .then(txt => out.textContent += "\n⌛️ Состояние установки прокси:\n✅ Proxy0 установка завершена.")
-      .catch(e => out.textContent += "\n❌ Ошибка:\n" + e);
-
-    } else {
-      out.textContent += "\n⛔️ Установка отменена.";
-    }
-  })
-  .catch(e => out.textContent += "\n❌ Ошибка при проверке компонента proxy:\n" + e);
-}
-    function recheckProxy() {
-      const out = document.getElementById("installOutput");
-      out.textContent += "\n🔄 Повторная проверка IP…";
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ check_only: true })
-      })
-      .then(res => res.json())
-      .then(d => {
-        out.textContent += `\n🌐 Провайдерский IP: ${d.external_ip}` +
-                           `\n🛡️ Proxy0 IP: ${d.proxy_ip}` +
-                           ((d.proxy_ip && d.proxy_ip !== d.external_ip)
-                             ? "\n🎯 Прокси работает!"
-                             : "\n❌ Прокси не работает");
-      })
-      .catch(e => out.textContent += "\n❌ Ошибка проверки:\n" + e);
-    }
+    
+    
+    
     
     function disableIPv6() {
   const modal = new bootstrap.Modal(document.getElementById('installModal'));
@@ -856,11 +766,11 @@ function installAll() {
   const out = document.getElementById("installOutput");
 
   if (!cfg || !routerIp) {
-    alert("❗️ Нужно сгенерировать config.json и указать IP роутера!");
+    alert("❗️ Нужно минимум один ключ чтобы сгенерировать config.json и указать IP роутера, если он отличается от указанного выше!");
     return;
   }
 
-  out.textContent = "🔍 Проверка компонента proxy на роутере...\n";
+  out.textContent = "🔍 Проверка установленного компонента клиент прокси...\n";
   modal.show();
 
   // 1. Проверка компонента proxy
@@ -874,11 +784,11 @@ function installAll() {
     out.textContent += txt;
 
     if (!txt.includes("✅")) {
-      out.textContent += "\n⛔️ Операция отменена. Установите компонент и повторите.";
+      out.textContent += "\n⛔️ Операция установки отменена. Установите компонент клиент прокси и повторите попытку.\n🔜Параметры системы🔜Изменить набор компонентов🔜Клиент прокси🔜установить галочку и сохранить.\n📲Позволяет устанавливать соединения через SOCKS/HTTP-прокси с данного устройства.";
       return;
     }
 
-    out.textContent += "\n⏳ Установка Proxy0...\n";
+    out.textContent += "⏳ Установка Proxy0...\n";
 
     // 2. Установка Proxy0
     const cmds = [
@@ -893,8 +803,8 @@ function installAll() {
       'ndmc -c "interface Proxy0 ip global 1" >/dev/null 2>&1',
       'ndmc -c "system configuration save" >/dev/null 2>&1',
       'ndmc -c "no interface Proxy0 ipv6 address" >/dev/null 2>&1',
-      'sleep 2',
-      'ndmc -c "show interface Proxy0"'
+      'pwd',
+      'ls'
     ];
 
     fetch(getPostUrl(), {
@@ -904,7 +814,7 @@ function installAll() {
     })
     .then(res => res.text())
     .then(txt => {
-      out.textContent += "\n✅ Proxy0 установлен.\n⏳ Установка config.json...";
+      out.textContent += "✅ Proxy0 установлен.\n⏳ Установка config.json...";
 
       // 3. Установка config.json
       fetch(getPostUrl(), {
@@ -914,15 +824,15 @@ function installAll() {
       })
       .then(res => res.json())
       .then(data => {
-        out.textContent += "\n\n✅ Конфиг установлен:\n" + data.message +
-                           "\n🚀 Перезапуск:\n" + data.restart +
-                           "\n📟 Статус:\n" + data.status +
-                           "\n🌐 Внешний IP: " + data.external_ip +
+        out.textContent += "\n✅ Конфиг установлен:\n" + data.message +
+                           "\n🚀 Перезапуск sing-box...\n" + data.restart +
+                           "📟 Статус sing-box...\n" + data.status +
+                           "🌐 Провайдерский IP: " + data.external_ip +
                            "\n🛡️ Proxy0 IP: " + data.proxy_ip +
                            ((data.proxy_ip && data.proxy_ip !== data.external_ip)
                              ? "\n🎯 Прокси работает!"
-                             : "\n❌ Прокси не работает") +
-                           "\n\n🎉 Установка завершена!";
+                             : "\n❌ Прокси не работает, нажмите кнопку ниже для повторения проверки.") +
+                           "\n💳Если хочешь чтобы обновления выходили быстрее поддержи, дав стимул разработчику фиксить быстрее\n🎉 Установка завершена!";
         document.getElementById("recheckBtn").classList.remove("d-none");
       })
       .catch(e => out.textContent += "\n❌ Ошибка при установке config.json:\n" + e);
@@ -958,7 +868,7 @@ function installAll() {
       .then(d => {
         if (d.update_available) {
           btn.classList.remove("d-none");
-          btn.textContent = `⬇️ Обновить до v${d.latest}`;
+          btn.textContent = `⬇️ Доступно обновление: v${d.latest}`;
           btn.title = d.show || "";
           if (manual && confirm(`Доступна новая версия ${d.latest}\n${d.show}\nОбновить?`)) {
             runUpdate();
@@ -974,14 +884,22 @@ function installAll() {
       });
     }
 
+
+
+
     // Чтобы после генерации сразу появились кнопки установки
+    
+    
+    
     const origGen = generateConfig;
     generateConfig = function() {
       origGen();
-      document.getElementById("installBtn").classList.remove("d-none");
-      document.getElementById("proxyBtn").classList.remove("d-none");
+      //document.getElementById("installBtn").classList.remove("d-none");
+      //document.getElementById("proxyBtn").classList.remove("d-none");
       document.getElementById("installAllBtn").classList.remove("d-none");
         document.getElementById("ipv6Btn").classList.remove("d-none");
+        // ⚙️ Автоматическая установка после генерации
+  setTimeout(() => installAll(), 1111); // небольшая задержка, чтобы всё отрисовалось
     };
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -1000,16 +918,34 @@ function installAll() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  // Восстановление темы
   const savedTheme = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
+
+  // Показывать/скрывать кнопку панели 9090
+  const checkbox = document.getElementById("includeClashApi");
+  const btn9090  = document.getElementById("goTo9090Btn");
+
+  function toggle9090Btn() {
+    if (checkbox.checked) {
+      btn9090.classList.remove("d-none");
+    } else {
+      btn9090.classList.add("d-none");
+    }
+  }
+
+  if (checkbox && btn9090) {
+    checkbox.addEventListener("change", toggle9090Btn);
+    toggle9090Btn(); // начальная проверка
+  }
 });
   </script>
-  <script>
-  function goTo9090() {
-    const loc = window.location;
-    const newUrl = `${loc.protocol}//${loc.hostname}:9090${loc.pathname}${loc.search}${loc.hash}`;
-    window.location.href = newUrl;
-  }
+<script>
+function goTo9090() {
+  const loc = window.location;
+  const newUrl = `${loc.protocol}//${loc.hostname}:9090${loc.pathname}${loc.search}${loc.hash}`;
+  window.open(newUrl, '_blank');
+}
 </script
 </body>
 </html>
