@@ -44,7 +44,7 @@ echo ""
 echo "Начинается установка NeoFit WebUI..."
 
 run_with_animation "Установка Lighttpd + PHP8" \
-    opkg install lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi jq
+    opkg install lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi
 
 run_with_animation "Создание директорий" \
     mkdir -p /opt/share/www/xray /opt/etc/lighttpd/conf.d
