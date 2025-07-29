@@ -52,7 +52,7 @@ EOF'
 
 run_with_animation "Создание index.php" sh -c '
 curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/xray/index.php -o /opt/share/www/xray/index.php
-
+'
 run_with_animation "Загрузка иконок" sh -c '
 curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/180x180.png -o /opt/share/www/hrneo/180x180.png
 curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/apple-touch-icon.png -o /opt/share/www/hrneo/apple-touch-icon.png
