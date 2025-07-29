@@ -99,3 +99,12 @@ ip_address=$(ip addr show br0 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -
 echo ""
 echo "✅ NeoFit WebUI установлен. Откройте в браузере: http://$ip_address:88"
 rm "$0"
+echo ""
+echo "Угостить кофем разработчика скинув донат:"
+echo ""
+echo "https://yoomoney.ru/to/410012481566554  кошелек юмани"
+echo "2200700768833807 карта тинькоф"
+echo ""
+sleep 5
+echo "Канал в телеграм: https://t.me/neofitkeenetic"
+echo ""
