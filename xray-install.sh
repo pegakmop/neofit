@@ -73,7 +73,7 @@ curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/sh
 curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/apple-touch-icon.png -o /opt/share/www/hrneo/apple-touch-icon.png
 '
 
-run_with_animation "Настройка Lighttpd" sh -c 'cat > /opt/etc/lighttpd/conf.d/80-hrneo.conf <<EOF
+run_with_animation "Настройка Lighttpd" sh -c 'cat > /opt/etc/lighttpd/conf.d/80-xray.conf <<EOF
 server.port := 8896
 server.username := ""
 server.groupname := ""
