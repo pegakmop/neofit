@@ -25,23 +25,23 @@ run_with_animation() {
     animation $! "$msg"
 }
 
-run_with_animation "Отказ от ответственности:"
+echo "Отказ от ответственности:"
 echo ""
-run_with_animation "Автор проекта NeoFit WebUI снимает с себя любую ответственность за любые неправомерные действия пользователя."
+echo "Автор проекта NeoFit WebUI снимает с себя любую ответственность за любые неправомерные действия пользователя."
 echo ""
-run_with_animation "При использовании данного софта в неправомерных целях пользователь сам несет ответственность за свои действия."
+echo "При использовании данного софта в неправомерных целях пользователь сам несет ответственность за свои действия."
 echo ""
-run_with_animation "Если пользователь не согласен с заявлением выше, пользователь обязан прервать установку софта нажав ^C либо закрыв терминал!"
+echo "Если пользователь не согласен с заявлением выше, пользователь обязан прервать установку софта нажав ^C либо закрыв терминал!"
 sleep 6
 echo ""
-run_with_animation "Начинаем установку NeoFit WebUI..."
+echo "Начинаем установку NeoFit WebUI..."
 echo ""
 run_with_animation "Добавление DNS 9.9.9.9 и 8.8.4.4"
 ndmc -c "dns-proxy tls upstream 9.9.9.9 sni dns.quad9.net" >/dev/null 2>&1
 ndmc -c "dns-proxy tls upstream 8.8.4.4 sni dns.google" >/dev/null 2>&1
 ndmc -c "system configuration save" >/dev/null 2>&1
 echo ""
-run_with_animation "Начинается установка NeoFit WebUI..."
+echo "Начинается установка NeoFit WebUI..."
 
 run_with_animation "Установка Lighttpd + PHP8" \
     opkg install lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi jq
@@ -97,4 +97,4 @@ run_with_animation "Перезапуск Lighttpd" /opt/etc/init.d/S80lighttpd r
 
 ip_address=$(ip addr show br0 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -n1)
 echo ""
-run_with_animation "✅ NeoFit WebUI установлен. Откройте в браузере: http://$ip_address:88"
+echo "✅ NeoFit WebUI установлен. Откройте в браузере: http://$ip_address:88"
