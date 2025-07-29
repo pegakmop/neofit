@@ -1,6 +1,6 @@
 #!/bin/sh
-# Установка NeoFit WebUI
-
+# Установка NeoFit Xray WebUI
+#  curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/xray/xray-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 # === АНИМАЦИЯ ===
 animation() {
     local pid=$1 message=$2 spin='|/-\\' i=0
