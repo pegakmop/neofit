@@ -40,7 +40,7 @@ if ! opkg update >/dev/null 2>&1; then
 fi
 echo ""
 echo "[*] Установка необходимых пакетов..."
-REQUIRED_PACKAGES="lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl php8-mod-session sing-box-go jq"
+REQUIRED_PACKAGES="lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl sing-box-go jq"
 for pkg in $REQUIRED_PACKAGES; do
     if ! opkg list-installed | grep -q "^$pkg "; then
         echo "[+] Установка $pkg..."
