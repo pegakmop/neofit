@@ -1,163 +1,64 @@
 <?php
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    $input = file_get_contents('php://input');
+    $path  = '/opt/etc/xray/config.json';
 
-    // 📌 Проверка наличия компонента proxy
-    if (isset($input['check_proxy_component'])) {
-    $check = shell_exec("ndmc -c \"components list\" | grep -A 10 'name: proxy' | grep -q 'installed:' && echo '✅ Клиент прокси установлен.\n⏳ Начинаю установку Proxy0.' || echo '❌ Компонент клиент прокси не установлен.\n❗️ Установка Proxy0 отменена.\n⚠️В веб интерфейсе роутера Keenetic заходим в Параметры системы > Изменить набор компонентов >> Клиент прокси >>> Поставить галочку и сохранить, роутер перезагрузится и установит компонент!'; ndmc -c \"exit\" >/dev/null 2>&1");
-    echo $check;
-    exit;
-}
+    if (!$input) {
+        http_response_code(400);
+        echo json_encode(["error" => "Пустой запрос"]);
+        exit;
+    }
 
+    // 1) Сохраняем Xray-конфиг
+    if (file_put_contents($path, $input) === false) {
+        http_response_code(500);
+        echo json_encode(["error" => "Не удалось записать конфиг"]);
+        exit;
+    }
 
-    // 📦 Проверка и установка обновления интерфейса
-    $currentVersion    = "0.0.0.8";
-    $remoteVersionUrl  = "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-version.txt";
-    $context           = stream_context_create(["http" => ["timeout" => 3]]);
-    $remoteContent     = @file_get_contents($remoteVersionUrl, false, $context);
+    // 2) Выполняем ndmc-команды для каждого inbound
+    $cfg  = json_decode($input, true);
+    $host = '127.0.0.1';  // <-- IP или hostname роутера
+    if (isset($cfg['inbounds']) && is_array($cfg['inbounds'])) {
+        foreach ($cfg['inbounds'] as $inb) {
+            if (!isset($inb['tag'], $inb['port'])) continue;
+            $tag   = $inb['tag'];            // e.g. "socks-in-socks0"
+            $port  = $inb['port'];           // e.g. 1080
+            preg_match('/(\d+)$/', $tag, $m);
+            $n     = $m[1] ?? '0';
+            $ifName = "Proxy{$n}";
 
-    // Проверка обновления
-    if (isset($input['check_update'])) {
-        $response = ['current' => $currentVersion, 'update_available' => false];
-
-        if ($remoteContent !== false) {
-            $lines = explode("\n", $remoteContent);
-            $versionInfo = [];
-            foreach ($lines as $line) {
-                $parts = explode("=", trim($line), 2);
-                if (count($parts) === 2) {
-                    $versionInfo[trim($parts[0])] = trim($parts[1]);
-                }
+            $cmds = [
+                "ndmc -c \"no interface {$ifName}\"",
+                "ndmc -c \"interface {$ifName}\"",
+                "ndmc -c \"interface {$ifName} description pegakmop-xray-{$tag}-{$ifName}-{$host}:{$port}\"",
+                "ndmc -c \"interface {$ifName} proxy protocol socks5\"",
+                "ndmc -c \"interface {$ifName} proxy socks5-udp\"",
+                "ndmc -c \"interface {$ifName} proxy upstream {$host} {$port}\"",
+                "ndmc -c \"interface {$ifName} up\"",
+                "ndmc -c \"interface {$ifName} ip global 1\""
+            ];
+            foreach ($cmds as $c) {
+                exec($c . ' 2>&1', $out, $code);
             }
-            if (!empty($versionInfo["Version"])) {
-                $response['latest']           = $versionInfo["Version"];
-                $response['show']             = $versionInfo["Show"] ?? '';
-                $response['update_available'] = version_compare($versionInfo["Version"], $currentVersion, ">");
-            } else {
-                http_response_code(500);
-                echo json_encode(['error' => 'Неверный формат файла обновления.']);
-                exit;
-            }
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Не удалось получить информацию об обновлении.']);
-            exit;
         }
-
-        echo json_encode($response);
-        exit;
+        // сохранить системную конфигурацию роутера
+        exec('ndmc -c "system configuration save" 2>&1');
     }
 
-    // Запуск обновления интерфейса
-    if (isset($input['run_update'])) {
-        $out = shell_exec(
-            'curl -sL "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/index.php" '
-          . '-o /opt/share/www/sing-box-go/index.php 2>&1'
-        );
+    // 3) Перезапускаем Xray
+    exec('/opt/etc/init.d/S24xray restart 2>&1', $out2, $code2);
+
+    if ($code2 === 0) {
+        echo json_encode(["status" => "ok", "message" => "✅ Конфиг сохранен на роутере, интерфейс(ы) добавлен(ы) и Xray пакет был перезапущен"]);
+    } else {
         echo json_encode([
-            'message' => '✔ NeoFit WebUI установил обновления. Перезагружаю веб страницу. Вы можете теперь угостить меня ☕️ кофе',
-            'log'     => $out
+            "status"  => "warning",
+            "message" => "⚠️ Ошибка! Конфиг Не сохранен или интерфейсы НЕ созданы или Xray НЕ перезапущен",
+            "output"  => $out2
         ]);
-        exit;
     }
-    
-
-    // Повторная проверка IP (proxy)
-    if (isset($input['check_only'])) {
-        $externalIp = trim(shell_exec('curl -s myip.wtf'));
-        sleep(1);
-        $proxyIp    = trim(shell_exec('curl -s --interface t2s0 myip.wtf'));
-        echo json_encode([
-            'external_ip' => $externalIp,
-            'proxy_ip'    => $proxyIp
-        ]);
-        exit;
-    }
-
-    // Установка конфига sing-box
-    if (isset($input['config'])) {
-        $configPath = '/opt/etc/sing-box/config.json';
-            $configDir  = dirname($configPath);
-
-    
-    if (!is_dir($configDir)) {
-        if (!mkdir($configDir, 0755, true)) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Не удалось создать каталог для конфига.']);
-            exit;
-        }
-    }
-
-        $success    = file_put_contents($configPath, $input['config']);
-        if ($success === false) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Ошибка при сохранении файла.']);
-            exit;
-        }
-        $restart    = shell_exec('/opt/etc/init.d/S99sing-box restart 2>&1');
-        sleep(1);
-        $status     = shell_exec('/opt/etc/init.d/S99sing-box status 2>&1');
-        sleep(1);
-        $externalIp = trim(shell_exec('curl -s myip.wtf'));
-        sleep(1);
-        $proxyIp    = trim(shell_exec('curl -s --interface t2s0 myip.wtf'));
-
-        echo json_encode([
-            'restart'     => $restart,
-            'status'      => $status,
-            'external_ip' => $externalIp,
-            'proxy_ip'    => $proxyIp,
-            'message'     => 'Конфиг успешно сохранён: /opt/etc/sing-box/config.json.'
-        ]);
-        exit;
-    }
-
-    // Установка интерфейса Proxy0
-    if (isset($input['proxy_commands']) && is_array($input['proxy_commands'])) {
-        $log = [];
-        foreach ($input['proxy_commands'] as $cmd) {
-            $out     = shell_exec($cmd . ' 2>&1');
-            $log[]   = "» $cmd\n$out";
-        }
-        echo implode("\n", $log);
-        exit;
-    }
-        // Отключение IPv6
-    if (isset($input['disable_ipv6'])) {
-        $script = <<<SH
-#!/bin/sh
-curl -kfsS http://localhost:79/rci/show/interface/ | jq -r '
-  to_entries[] |
-  select(.value.defaultgw == true or .value.via != null) |
-  if .value.via then "\\(.value.id) \\(.value.via)" else "\\(.value.id)" end
-' | while read -r iface via; do
-  echo "⛔️ Отключаем IPv6 на \$iface..."
-  ndmc -c "no interface \$iface ipv6 address"
-  if [ -n "\$via" ]; then
-    echo "⛔️ Отключаем IPv6 на \$via..."
-    ndmc -c "no interface \$via ipv6 address"
-  fi
-done
-echo "💾 Сохраняем конфигурацию..."
-ndmc -c "system configuration save"
-echo "✅ Готово. IPv6 отключён на нужных интерфейсах."
-SH;
-
-        $tmp = '/tmp/disable_ipv6.sh';
-        file_put_contents($tmp, $script);
-        chmod($tmp, 0755);
-        $out = shell_exec("$tmp 2>&1");
-
-        echo json_encode([
-            'message' => '🛠 IPv6 отключён',
-            'log'     => $out
-        ]);
-        exit;
-    }
-
-    // Неизвестный запрос
-    http_response_code(400);
-    echo "Ошибка: неизвестный формат запроса.";
     exit;
 }
 ?>
@@ -165,759 +66,449 @@ SH;
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>NeoFit WebUI Sing-box</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-<style>
-  :root {
-    --bg: #f8f9fa;
-    --text: #212529;
-    --card-bg: #ffffff;
-    --input-bg: #ffffff;
-    --border: #ced4da;
-    --highlight: #0d6efd;
-  }
-
-  [data-theme="dark"] {
-    --bg: #121212;
-    --text: #e0e0e0;
-    --card-bg: #1e1e1e;
-    --input-bg: #2a2a2a;
-    --border: #444;
-    --highlight: #0d6efd;
-  }
-
-  body {
-    background-color: var(--bg) !important;
-    color: var(--text);
-  }
-
-  .card {
-    background-color: var(--card-bg);
-    color: var(--text);
-  }
-
-  .form-control,
-  .form-select,
-  .form-check-input {
-    background-color: var(--input-bg);
-    color: var(--text);
-    border-color: var(--border);
-  }
-
-  .form-control::placeholder {
-    color: #aaa;
-  }
-
-  pre,
-  textarea {
-    background-color: var(--input-bg);
-    color: var(--text);
-  }
-
-  .btn-primary {
-    background-color: var(--highlight);
-    border-color: var(--highlight);
-  }
-
-  .btn-outline-secondary,
-  .btn-outline-danger,
-  .btn-outline-primary {
-    color: var(--highlight);
-    border-color: var(--highlight);
-  }
-    
-[data-theme="dark"] .modal-content {
-  background-color: var(--card-bg);
-  color: var(--text);
-}
-
-[data-theme="dark"] .modal-header {
-  border-bottom-color: var(--border);
-}
-
-[data-theme="dark"] .modal-body {
-  border-top-color: var(--border);
-}
-
-[data-theme="dark"] .btn-close {
-  filter: invert(1);
-}
-
-[data-theme="dark"] #installOutput {
-  background-color: var(--input-bg);
-  color: var(--text);
-  border-color: var(--border);
-}
-</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neofit Xray</title>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      --bg-color: #f9f9f9; --text-color: #333; --border-color: #ccc;
+      --card-bg: #fff; --button-bg: #007BFF; --button-text: #fff;
+      font-family: Arial, sans-serif; margin: 0; padding: 20px;
+      background: var(--bg-color); color: var(--text-color);
+      transition: background-color .3s, color .3s;
+    }
+    body.dark-theme {
+      --bg-color: #1e1e1e; --text-color: #c9d1d9;
+      --border-color: #555; --card-bg: #282c34;
+      --button-bg: #444; --button-text: #fff;
+    }
+    h1 { text-align: center; margin-bottom: 30px; }
+    .controls {
+      display: flex; justify-content: center; gap: 10px;
+      flex-wrap: wrap; margin-bottom: 20px;
+    }
+    button {
+      background: var(--button-bg); color: var(--button-text);
+      border: none; border-radius: 20px; padding: 10px 20px;
+      font-size: 16px; cursor: pointer; transition: opacity .3s;
+    }
+    button:hover { opacity: .9; }
+    .interface-container {
+      border: 1px solid var(--border-color);
+      background: var(--card-bg); padding: 10px;
+      margin-bottom: 10px; border-radius: 4px;
+    }
+    .interface-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .link-field {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px;
+    }
+    input[type="text"] {
+      width: 100%; padding: 8px; border: 1px solid var(--border-color);
+      border-radius: 4px; background: var(--card-bg);
+      color: var(--text-color); transition: border-color .3s;
+    }
+    .config-display {
+      border: 1px solid var(--border-color);
+      background: var(--card-bg); padding: 10px;
+      margin-top: 10px; border-radius: 4px;
+      max-height: 60vh; overflow-y: auto; position: relative;
+    }
+    .trash-btn, .add-link-btn {
+      width: 32px; height: 32px; padding: 0; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; background: var(--button-bg);
+      color: var(--button-text); transition: opacity .3s;
+    }
+    .trash-btn:hover, .add-link-btn:hover { opacity: .9; }
+    #warnings { color: #ff6b6b; margin-top: 10px; }
+    #theme-toggle {
+      position: fixed; top: 20px; right: 20px;
+      width: 40px; height: 40px; border: none; border-radius: 50%;
+      background: var(--button-bg); color: var(--button-text);
+      font-size: 18px; cursor: pointer; z-index: 1000;
+    }
+    @media (min-width: 600px) {
+      .container { max-width: 600px; margin: 0 auto; }
+    }
+    .config-display pre { margin: 0; padding: 0; background: transparent; border: none; }
+    .config-display code {
+      display: block; padding: 10px; font-size: 14px; line-height: 1.5;
+    }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px; z-index: 10;
+      background: var(--button-bg); color: var(--button-text);
+      border: none; border-radius: 4px; padding: 4px 8px;
+      font-size: 14px; cursor: pointer; transition: opacity .3s;
+    }
+    .copy-btn:hover { opacity: .9; }
+    .tooltip {
+      position: fixed; top: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50; color: white; padding: 8px 16px;
+      border-radius: 4px; opacity: 0; transition: opacity .3s;
+      z-index: 9999;
+    }
+    .tooltip.show { opacity: 1; }
+  </style>
 </head>
-<body>
-  <div class="container mt-5">
-    <div class="card shadow">
-      <div class="card-body">
-      <div class="text-end mb-3">
-      </div> 
-        <h3 class="card-title mb-4" <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
-   👉 🌓 👈 NeoFit для Sing-box
-  </button></h3>
-
-<div class="mb-3">
-  <label for="router" class="form-label">
-    IP роутера (local ip & public ip):
-  </label>
-  <input
-    type="text"
-    id="router"
-    class="form-control"
-    value=""
-  >
-</div>
-
-<script>
-window.addEventListener("DOMContentLoaded", () => {
-  const routerInput = document.getElementById("router");
-
-  if (routerInput && location.hostname.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
-    // Только IP, без порта
-    routerInput.value = location.hostname;
-  } else {
-    // Полный host с портом, если есть
-    routerInput.value = "192.168.1.1";
-  }
-});
-</script>
-
-        <div class="mb-3">
-          <label for="links" class="form-label">
-            Прокси ссылки для config.json:
-          </label>
-          <textarea
-            id="links"
-            class="form-control"
-            rows="8"
-            placeholder="ss://, vless:// Каждый добавленный ключ должен быть с новой строки!"
-          ></textarea>
-        </div>
-
-        <div class="form-check mb-3">
-          <input
-            class="form-check-input"
-            type="checkbox"
-            id="includeClashApi"
-            checked
-          >
-          <label class="form-check-label" for="includeClashApi">
-            Веб интерфейс <button onclick="goTo9090()">панель Sing-Box</button>
-          </label>
-        </div>
-          <div id="warnings" class="text-danger mb-3"></div>
-
-        <div class="d-flex gap-2 mb-3">
-          <button
-            class="btn btn-primary"
-            onclick="generateConfig()"
-          >Сгенерировать config.json</button>
-          <button
-            id="pasteBtn"
-            class="btn btn-outline-secondary btn-sm"
-            onclick="pasteClipboard()"
-          >📋 Вставить url</button>
-          <button
-            id="updateBtn"
-            class="btn btn-outline-danger d-none"
-            onclick="runUpdate()"
-          >⬇️ Обновить веб интерфейс</button>
-        </div>
-        <button><a href="https://yoomoney.ru/to/410012481566554">☕️ на Юмани</a></button>
-        <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">☕️ на Тинькофф</a></button> </br></br>
-        <div class="d-flex gap-2 mb-3">
-          <button
-            id="proxyBtn"
-            class="btn btn-info d-none"
-            onclick="installProxy()"
-          >🧩 Установить Proxy0</button>
-          <button
-            id="installBtn"
-            class="btn btn-warning d-none"
-            onclick="installConfig()"
-          >📦 Установить config.json</button>
-        </div> 
-        <button
-  id="ipv6Btn"
-  class="btn btn-danger d-none"
-  onclick="disableIPv6()">🛠 Отключить IPv6 оставив only IPv4</button>
-
-        <div id="resultWrapper" class="d-none">
-          <h5>Результат:</h5>
-          <pre
-            id="result"
-            class="bg-dark text-white p-3 rounded"
-            style="white-space: pre-wrap;"
-          ></pre>
-          <div class="mt-2">
-            <a
-              id="downloadBtn"
-              class="btn btn-success d-none"
-              download="config.json"
-            >⬇ Скачать config.json</a>
-            <button
-              id="copyBtn"
-              class="btn btn-secondary d-none"
-              onclick="copyConfig()"
-            >Скопировать</button>
-          </div>
-        </div>
-      </div>
+<body class="dark-theme">
+  <div class="container">
+    <h1>NeoFit Xray</h1>
+    <div class="controls">
+      <button onclick="addInterface()">🆕Создать</button>
+      <button hidden onclick="showUploadDialog()">🆒Просмотреть</button>
+      <button onclick="generateConfig()">🆗Сгенерировать</button>
+      <button onclick="saveConfig()">🆙Сохранить</button>
+    </div>
+    <div id="warnings"></div>
+    <div id="interfacesContainer"></div>
+    <div id="configDisplay" class="config-display" style="display: none;">
+      <button hidden class="copy-btn" onclick="copyConfigToClipboard()">📋 Скопировать в буфер обмена</button>
+      <pre><code id="output" class="language-json"></code></pre>
     </div>
   </div>
-
-  <!-- Модальное окно для установки -->
-<div
-  class="modal fade"
-  id="installModal"
-  tabindex="-1"
-  aria-hidden="true"
->
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Установка на роутер</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">✖️</button>
-      </div>
-      <div class="modal-body">
-        <pre
-          id="installOutput"
-          class="p-2 border rounded"
-          style="white-space: pre-wrap;"
-        >Ожидание...</pre>
-        <div class="text-end mt-3">
-          <button
-            id="recheckBtn"
-            class="btn btn-outline-primary d-none"
-            onclick="recheckProxy()"
-          >🔄 Проверка работы прокси по IP</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-  ></script>
+  <button id="theme-toggle" onclick="toggleTheme()">🌓</button>
+  <div id="copyTooltip" class="tooltip">Скопировано в буфер обмена!</div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
   <script>
-    function getPostUrl() {
-      return `${location.origin}/index.php`;
-      alert(getPostUrl());
+    let config = {}, interfaceCount = 0, isConfigModified = false, baseSocksPort = 1080;
+
+    function addInterface() {
+      interfaceCount++;
+      isConfigModified = true;
+      const container = document.createElement('div');
+      container.className = 'interface-container';
+      container.id = `interface-${interfaceCount}`;
+
+      const header = document.createElement('div');
+      header.className = 'interface-header';
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'trash-btn';
+      delBtn.innerHTML = '🗑️';
+      delBtn.title = 'Удалить интерфейс';
+      delBtn.onclick = () => { container.remove(); isConfigModified = true; };
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'Название интерфейса (например, socks0)';
+      nameInput.value = `socks${interfaceCount - 1}`;
+      nameInput.maxLength = 20;
+
+      header.appendChild(delBtn);
+      header.appendChild(nameInput);
+
+      const linksContainer = document.createElement('div');
+      linksContainer.className = 'links-container';
+
+      const addLinkBtn = document.createElement('button');
+      addLinkBtn.className = 'add-link-btn';
+      addLinkBtn.innerHTML = '+';
+      addLinkBtn.title = 'Добавить ссылку';
+      addLinkBtn.onclick = () => { addLinkField(linksContainer); isConfigModified = true; };
+
+      container.appendChild(header);
+      container.appendChild(linksContainer);
+      //container.appendChild(addLinkBtn);
+      document.getElementById('interfacesContainer').appendChild(container);
+
+      addLinkField(linksContainer);
     }
 
-    function pasteClipboard() {
-      navigator.clipboard.readText()
-        .then(text => {
-          document.getElementById("links").value = text;
-          document.getElementById("links").focus();
-        })
-        .catch(err => {
-          alert("Не удалось получить текст из буфера обмена: " + err);
-        });
+    function addLinkField(container) {
+      const linkField = document.createElement('div');
+      linkField.className = 'link-field';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'vless://... vmess://... trojan://... ss://... socks://...';
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'trash-btn';
+      deleteBtn.innerHTML = '🗑️';
+      deleteBtn.title = 'Удалить ссылку';
+      deleteBtn.onclick = () => { linkField.remove(); isConfigModified = true; };
+
+      linkField.appendChild(input);
+      linkField.appendChild(deleteBtn);
+      container.appendChild(linkField);
     }
 
-    function parseSS(line) {
+    function parseVlessLinkForXray(link) {
+      const match = link.match(/vless:\/\/([^@]+)@([^:]+):(\d+)\/?(?:\?([^#]*))?(?:#(.*))?/);
+      if (!match) return null;
+      const uuid = match[1], server = match[2], server_port = parseInt(match[3],10);
+      const params = new URLSearchParams(match[4]||''), tag = decodeURIComponent(match[5]||'').trim() || `vless-${server}-${server_port}`;
+      const outbound = {
+        protocol: "vless",
+        settings: { vnext:[{ address:server, port:server_port, users:[{ id:uuid, encryption:params.get("encryption")||"none", flow:params.get("flow")||"" }]}] },
+        streamSettings:{ network:params.get("type")||"tcp", security:params.get("security")||"none" },
+        tag
+      };
+      if(outbound.streamSettings.security==="tls"){
+        outbound.streamSettings.tlsSettings={ serverName:params.get("sni")||server, alpn:["h2","http/1.1"] };
+      } else if(outbound.streamSettings.security==="reality"){
+        outbound.streamSettings.realitySettings={ publicKey:params.get("pbk")||"", fingerprint:params.get("fp")||"chrome", serverName:params.get("sni")||server, shortId:params.get("sid")||"", spiderX:params.get("path")||"/" };
+      }
+      if((params.get("type")||"tcp")==="ws"){
+        outbound.streamSettings.wsSettings={ path:params.get("path")||"/", headers:{ Host:params.get("host")||server } };
+      }
+      return outbound;
+    }
+
+    function parseVmessLinkForXray(link) {
       try {
-        const url = new URL(line);
-        const [authPart, serverPart] = url.href.replace("ss://", "").split('@');
-        let decoded;
-        try {
-          decoded = atob(authPart);
-        } catch {
-          decoded = decodeURIComponent(authPart);
-        }
-        const [method, password] = decoded.split(':');
-        const [server, port = "8388"] = serverPart.split(':');
-
-        const tag = decodeURIComponent(url.hash.slice(1)) ||
-                   (url.search.includes("outline=1") ? "Outline" : "ShadowSocks");
-
+        const b64 = link.replace('vmess://',''), json = JSON.parse(atob(b64.replace(/-/g,'+').replace(/_/g,'/')));
         return {
-          type: "shadowsocks",
-          tag,
-          server,
-          server_port: parseInt(port),
-          method,
-          password
+          protocol:"vmess",
+          settings:{ vnext:[{ address:json.add, port:parseInt(json.port,10), users:[{ id:json.id, alterId:json.aid?parseInt(json.aid,10):0, security:json.scy||"auto" }]}] },
+          streamSettings:{ network:json.net||"tcp", security:json.tls==="tls"?"tls":"none", tlsSettings:json.tls==="tls"?{ serverName:json.sni||json.add }:undefined },
+          tag:json.ps||`vmess-${json.add}-${json.port}`
         };
-      } catch (e) {
-        console.log("Ошибка парсинга SS:", e);
-        return null;
-      }
+      } catch(e) { return null; }
     }
 
-    function parseVLESS(line) {
-      try {
-        const url = new URL(line);
-        const [uuid, serverPort] = url.href.replace("vless://", "").split('@');
-        const [server, port] = serverPort.split(':');
-        const params = new URLSearchParams(url.search);
-        const tag = decodeURIComponent(url.hash.slice(1)) || "VLESS";
-        const security = params.get("security") || "none";
-        const flow     = params.get("flow") || params.get("mode");
-        const sni      = params.get("sni");
-        const host     = params.get("host");
-        const transportType = params.get("type") || "ws";
-
-        const config = {
-          type: "vless",
-          tag,
-          server,
-          server_port: parseInt(port),
-          uuid,
-          packet_encoding: "xudp"
-        };
-
-        if (security !== "none") {
-          config.tls = {
-            enabled: true,
-            server_name: sni || server,
-            insecure: false,
-            utls: {
-              enabled: true,
-              fingerprint: params.get("fp") || "chrome"
-            }
-          };
-          if (security === "reality") {
-            config.tls.reality = {
-              enabled: true,
-              public_key: params.get("pbk") || "",
-              short_id: params.get("sid") || ""
-            };
-          }
-        }
-
-        if (security !== "reality") {
-          config.transport = { type: transportType };
-          if (transportType === "ws") {
-            config.transport.path = params.get("path") || "/";
-            if (host) config.transport.headers = { Host: host };
-          } else if (transportType === "grpc" && params.get("path")) {
-            config.transport.serviceName = params.get("path");
-          }
-        }
-
-        if (flow && transportType !== "grpc") {
-          config.flow = flow;
-        }
-
-        return config;
-      } catch (e) {
-        console.log("Ошибка парсинга VLESS:", e);
-        return null;
-      }
+    function parseTrojanLinkForXray(link) {
+      const match = link.match(/trojan:\/\/([^@]+)@([^:]+):(\d+)(?:\?([^#]*))?(?:#(.*))?/);
+      if (!match) return null;
+      const password = match[1], server = match[2], server_port = parseInt(match[3],10);
+      const params = new URLSearchParams(match[4]||''), tag = decodeURIComponent(match[5]||'').trim()||`trojan-${server}-${server_port}`;
+      return {
+        protocol:"trojan",
+        settings:{ servers:[{ address:server, port:server_port, password }] },
+        streamSettings:{ network:"tcp", security:params.get("sni")?"tls":"none", tlsSettings:params.get("sni")?{ serverName:params.get("sni") }:undefined },
+        tag
+      };
     }
 
-    function parseVMess(line) {
+    function parseShadowsocksLinkForXray(link) {
       try {
-        const raw = line.replace("vmess://", "");
-        const obj = JSON.parse(atob(raw));
+        let url = link.replace('ss://','');
+        let tag = url.includes('#')?decodeURIComponent(url.split('#')[1]):'';
+        url = url.split('#')[0];
+        const [userinfo, hostinfo] = url.includes('@')?url.split('@'):[atob(url),""];
+        const [method, password] = userinfo.includes(':')?userinfo.split(':'):[userinfo,""];
+        const [server, port] = hostinfo.split(':');
         return {
-          type: "vmess",
-          tag: obj.ps || "VMess",
-          server: obj.add,
-          server_port: parseInt(obj.port),
-          uuid: obj.id,
-          security: obj.security || "auto",
-          tls: obj.tls === "tls",
-          transport: {
-            type: obj.net || "tcp",
-            path: obj.path || "/"
-          }
+          protocol:"shadowsocks",
+          settings:{ servers:[{ address:server, port:parseInt(port,10), method, password }] },
+          tag: tag||`ss-${server}-${port}`
         };
-      } catch (e) {
-        console.log("Ошибка парсинга VMess:", e);
-        return null;
-      }
+      } catch(e) { return null; }
     }
 
-    function parseTrojan(line) {
-      try {
-        const url = new URL(line);
-        const [password, hostPort] = url.href.replace("trojan://", "").split('@');
-        const [server, port] = hostPort.split(':');
-        return {
-          type: "trojan",
-          tag: decodeURIComponent(url.hash.slice(1)) || "Trojan",
-          server,
-          server_port: parseInt(port),
-          password,
-          tls: {
-            enabled: true,
-            server_name: url.searchParams.get("sni") || server,
-            insecure: false
-          }
-        };
-      } catch (e) {
-        console.log("Ошибка парсинга Trojan:", e);
-        return null;
-      }
+    function parseSocksLinkForXray(link) {
+      const re = /socks:\/\/(?:([^:]+):([^@]+)@)?([^:]+):(\d+)(?:#(.*))?/;
+      const m = link.match(re); if (!m) return null;
+      const username = m[1]||"", password = m[2]||"", server = m[3], server_port = parseInt(m[4],10);
+      const tag = decodeURIComponent(m[5]||'').trim()||`socks-${server}-${server_port}`;
+      return {
+        protocol:"socks",
+        settings:{ servers:[{ address:server, port:server_port, users:username?[{ user:username, pass:password }]:[] }] },
+        tag
+      };
     }
 
-    function parseTUIC(line) {
-      try {
-        const url = new URL(line);
-        const tag = decodeURIComponent(url.hash.slice(1)) || "TUIC";
-        const [uuid, password] = url.username.includes(':')
-          ? url.username.split(':')
-          : [url.username, url.password];
-        return {
-          type: "tuic",
-          tag,
-          server: url.hostname,
-          server_port: parseInt(url.port),
-          uuid,
-          password,
-          alpn: ["h3"],
-          tls: {
-            enabled: true,
-            server_name: url.hostname,
-            insecure: false
-          }
-        };
-      } catch (e) {
-        console.log("Ошибка парсинга TUIC:", e);
-        return null;
-      }
+    function parseLink(link) {
+      if (link.startsWith('vless://')) return parseVlessLinkForXray(link);
+      if (link.startsWith('vmess://')) return parseVmessLinkForXray(link);
+      if (link.startsWith('trojan://')) return parseTrojanLinkForXray(link);
+      if (link.startsWith('ss://')) return parseShadowsocksLinkForXray(link);
+      if (link.startsWith('socks://')) return parseSocksLinkForXray(link);
+      return null;
+    }
+
+    function getNextFreePort(inbounds, startPort) {
+      const used = new Set(inbounds.map(ib=>ib.port));
+      let p = startPort;
+      while (used.has(p)) p++;
+      return p;
     }
 
     function generateConfig() {
-      const routerIp       = document.getElementById("router").value.trim();
-      const proxyLinks     = document.getElementById("links").value.trim().split('\n').filter(l => l.trim());
-      const includeClash   = document.getElementById("includeClashApi").checked;
-      const resultDiv      = document.getElementById("result");
-      const warningsDiv    = document.getElementById("warnings");
-      const downloadLink   = document.getElementById("downloadBtn");
-      const copyBtn        = document.getElementById("copyBtn");
-      const resultWrapper  = document.getElementById("resultWrapper");
-
-      warningsDiv.innerHTML = '';
-      resultWrapper.classList.add("d-none");
-      downloadLink.classList.add("d-none");
-      copyBtn.classList.add("d-none");
-
-      if (!routerIp) {
-        warningsDiv.innerHTML = "Ошибка: IP роутера обязателен";
+      if (!isConfigModified && config.inbounds && config.inbounds.length) {
+        const out = document.getElementById('output');
+        out.textContent = JSON.stringify(config, null, 2);
+        hljs.highlightElement(out);
+        document.getElementById('configDisplay').style.display = 'block';
+        resizeOutputContainer();
         return;
       }
-      if (proxyLinks.length === 0) {
-        warningsDiv.innerHTML = "Ошибка: нужно хотя бы одну ссылку";
-        return;
-      }
-
-      const outbounds = [];
-      const tags      = [];
-      const warns     = [];
-
-      proxyLinks.forEach(line => {
-        let cfg = null;
-        if (line.startsWith("ss://"))      cfg = parseSS(line);
-        else if (line.startsWith("vless://")) cfg = parseVLESS(line);
-        else if (line.startsWith("vmess://")) cfg = parseVMess(line);
-        else if (line.startsWith("trojan://")) cfg = parseTrojan(line);
-        else if (line.startsWith("tuic://"))   cfg = parseTUIC(line);
-
-        if (cfg) {
-          outbounds.push(cfg);
-          if (["vless","vmess","trojan","tuic"].includes(cfg.type)) {
-            tags.push(cfg.tag);
-          }
-        } else {
-          warns.push(`Не удалось распарсить: ${line}`);
-        }
-      });
-
-      if (tags.length) {
-        outbounds.unshift({
-          type: "selector",
-          tag: "select",
-          outbounds: tags,
-          default: tags[0],
-          interrupt_exist_connections: false
-        });
-      }
-      outbounds.push(
-        { type: "direct", tag: "direct" },
-        { type: "block",  tag: "block"  }
-      );
-
-      const config = {
-        experimental: { cache_file: { enabled: true } },
-        log: { level: "debug", timestamp: true },
-        inbounds: [
-          {
-            type: "tun",
-            interface_name: "tun0",
-            domain_strategy: "ipv4_only",
-            address: "172.16.250.1/30",
-            auto_route: false,
-            strict_route: false,
-            sniff: true,
-            sniff_override_destination: false
-          },
-          {
-            type: "mixed",
-            tag: "mixed-in",
-            listen: "0.0.0.0",
-            listen_port: 1080,
-            sniff: true,
-            sniff_override_destination: false
-          }
-        ],
-        outbounds,
-        route: {
-          auto_detect_interface: false,
-          final: tags.length ? "select" : "direct",
-          rules: [
-            { protocol: "dns", outbound: "dns-out" },
-            { network: "udp", port: 443, outbound: "block" }
-          ]
-        }
+      let newConfig = {
+        log: { loglevel: "none" },
+        inbounds: [],
+        outbounds: []
       };
+      let warnings = [];
+      let socksPort = baseSocksPort;
+      const interfaces = document.querySelectorAll('.interface-container');
+      const usedTags = new Set();
+      const routingRules = [];
 
-      if (includeClash) {
-        config.experimental.clash_api = {
-          external_controller: `${routerIp}:9090`,
-          external_ui: "ui",
-          access_control_allow_private_network: true
-        };
-      }
-
-      const jsonStr = JSON.stringify(config, null, 2);
-      resultDiv.textContent = jsonStr;
-      resultWrapper.classList.remove("d-none");
-
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      downloadLink.href = URL.createObjectURL(blob);
-      downloadLink.classList.remove("d-none");
-      copyBtn.classList.remove("d-none");
-
-      if (warns.length) {
-        warningsDiv.innerHTML = warns.map(w => `– ${w}`).join("<br>");
-      }
-    }
-
-    function copyConfig() {
-      const text = document.getElementById("result").textContent;
-      navigator.clipboard.writeText(text)
-        .then(() => alert("Конфиг скопирован в буфер!"))
-        .catch(e => alert("Ошибка копирования: " + e));
-    }
-
-    function installConfig() {
-      const resultDiv = document.getElementById("result");
-      const cfg       = resultDiv.textContent;
-        if (!cfg) {
-          alert("❗️Ошибка установки config.json на роутер, нужно заполнить хотя бы одну прокси ссылку и нажать снова сгенерировать config.json и после уже нажать установить config.json");
+      interfaces.forEach((ic, idx) => {
+        const name = ic.querySelector('.interface-header input[type="text"]').value.trim() || `socks${idx}`;
+        const links = ic.querySelectorAll('.links-container input[type="text"]');
+        if (links.length === 0) {
+          warnings.push(`⚠️ Интерфейс "${name}" без ссылок.`);
+          alert(`⚠️ Интерфейс "${name}" без ссылок.`);
           return;
         }
+        const port = getNextFreePort(newConfig.inbounds, socksPort);
+        const inboundTag = `${name}`;
+        newConfig.inbounds.push({
+          protocol: "socks",
+          port,
+          tag: inboundTag,
+          settings: { auth: "noauth", udp: true }
+        });
+        socksPort = port + 1;
 
-      const modal     = new bootstrap.Modal(document.getElementById('installModal'));
-      const out       = document.getElementById("installOutput");
-      out.textContent = "📦 Отправка конфига на роутер...";
-      modal.show();
-
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: cfg })
-      })
-      .then(async res => {
-        if (!res.ok) {
-          const err = await res.text();
-          out.textContent += `\n❌ Ошибка:\n${err}`;
-          return;
-        }
-        const data = await res.json();
-        out.textContent += "\n✅ Ответ роутера:\n" + data.message +
-                           "\n🚀 Перезапускаем sing-box:\n" + data.restart +
-                           "\n📟 Статус:\n" + data.status +
-                           "\n🌐 Провайдерский IP: " + data.external_ip +
-                           "\n🛡️ Proxy0 IP: " + data.proxy_ip +
-                           ((data.proxy_ip && data.proxy_ip !== data.external_ip)
-                             ? "\n🎯 Прокси работает!"
-                             : "\n❌ Прокси не работает") +
-                           "\n🎉 Установка завершена!";
-        document.getElementById("recheckBtn").classList.remove("d-none");
-      })
-      .catch(e => out.textContent += "\n❌ Ошибка запроса:\n" + e);
-    }
-
-function installProxy() {
-  const routerIp = document.getElementById("router").value.trim();
-  const modal    = new bootstrap.Modal(document.getElementById('installModal'));
-  const out      = document.getElementById("installOutput");
-  out.textContent = "🔍 Проверка установлен ли на роутере Keenetic компонент  клиент прокси...\n⚠️Позволяет устанавливать соединения через SOCKS/HTTPS/HTTP-прокси с данного устройства.";
-  modal.show();
-
-  // Сначала проверим наличие компонента proxy
-  fetch(getPostUrl(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ check_proxy_component: true })
-  })
-  .then(res => res.text())
-  .then(txt => {
-    out.textContent += "\n" + txt;
-
-    if (txt.includes("✅")) {
-      out.textContent += "\n⏳ Установка Proxy0...";
-      const cmds = [
-        'ndmc -c "no interface Proxy0" >/dev/null 2>&1',
-        'ndmc -c "system configuration save" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0" >/dev/null 2>&1',
-        `ndmc -c "interface Proxy0 description NeoFit-Proxy0-${routerIp}:1080" >/dev/null 2>&1`,
-        'ndmc -c "interface Proxy0 proxy protocol socks5" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0 proxy socks5-udp" >/dev/null 2>&1',
-        `ndmc -c "interface Proxy0 proxy upstream ${routerIp} 1080" >/dev/null 2>&1`,
-        'ndmc -c "interface Proxy0 up" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0 ip global 1" >/dev/null 2>&1',
-        'ndmc -c "system configuration save" >/dev/null 2>&1',
-        'ndmc -c "no interface Proxy0 ipv6 address" >/dev/null 2>&1',
-        'sleep 2',
-        'ndmc -c "show interface Proxy0"',
-        'curl -s --interface t2s0 myip.wtf',
-        'Установка прокси завершена, установите конфиг >/dev/null 2>&1'
-      ];
-
-      // Установка
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proxy_commands: cmds })
-      })
-      .then(res => res.text())
-      .then(txt => out.textContent += "\n⌛️ Состояние установки прокси:\n✅ Proxy0 установка завершена.")
-      .catch(e => out.textContent += "\n❌ Ошибка:\n" + e);
-
-    } else {
-      out.textContent += "\n⛔️ Установка отменена.";
-    }
-  })
-  .catch(e => out.textContent += "\n❌ Ошибка при проверке компонента proxy:\n" + e);
-}
-    function recheckProxy() {
-      const out = document.getElementById("installOutput");
-      out.textContent += "\n🔄 Повторная проверка IP…";
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ check_only: true })
-      })
-      .then(res => res.json())
-      .then(d => {
-        out.textContent += `\n🌐 Провайдерский IP: ${d.external_ip}` +
-                           `\n🛡️ Proxy0 IP: ${d.proxy_ip}` +
-                           ((d.proxy_ip && d.proxy_ip !== d.external_ip)
-                             ? "\n🎯 Прокси работает!"
-                             : "\n❌ Прокси не работает");
-      })
-      .catch(e => out.textContent += "\n❌ Ошибка проверки:\n" + e);
-    }
-    
-    function disableIPv6() {
-  const modal = new bootstrap.Modal(document.getElementById('installModal'));
-  const out   = document.getElementById("installOutput");
-  out.textContent = "⏳ Отключение IPv6...";
-  modal.show();
-
-  fetch(getPostUrl(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ disable_ipv6: true })
-  })
-  .then(res => res.json())
-  .then(d => {
-    out.textContent += "\n" + d.message + "\n\n" + d.log;
-  })
-  .catch(e => {
-    out.textContent += "\n❌ Ошибка: " + e;
-  });
-}
-
-    function runUpdate() {
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ run_update: true })
-      })
-      .then(res => res.json())
-      .then(d => { alert(d.message); location.reload(); })
-      .catch(e => alert("❌ Ошибка обновления: " + e));
-    }
-
-    function checkUpdate(manual = true) {
-      const btn = document.getElementById("updateBtn");
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ check_update: true })
-      })
-      .then(res => res.json())
-      .then(d => {
-        if (d.update_available) {
-          btn.classList.remove("d-none");
-          btn.textContent = `⬇️ Обновить до v${d.latest}`;
-          btn.title = d.show || "";
-          if (manual && confirm(`Доступна новая версия ${d.latest}\n${d.show}\nОбновить?`)) {
-            runUpdate();
+        const outTags = [];
+        links.forEach(inp => {
+          const l = inp.value.trim();
+          if (!l) return;
+          const o = parseLink(l);
+          if (o) {
+            if (!usedTags.has(o.tag)) {
+              newConfig.outbounds.push(o);
+              usedTags.add(o.tag);
+            }
+            outTags.push(o.tag);
+          } else {
+            warnings.push(`⚠️ Неверная ссылка: ${l}`);
+            alert(`⚠️ Неверная ссылка: ${l}`);
           }
-        } else {
-          btn.classList.add("d-none");
-          if (manual) alert("✅ Вы уже на последней версии.");
+        });
+        if (outTags.length) {
+          routingRules.push({
+            type: "field",
+            inboundTag: [inboundTag],
+            outboundTag: outTags[0]
+          });
         }
+      });
+
+      newConfig.outbounds.push({ protocol: "freedom", tag: "direct" });
+      newConfig.outbounds.push({ protocol: "blackhole", tag: "blocked" });
+      if (interfaces.length > 1) {
+        newConfig.routing = { rules: routingRules };
+      }
+
+      config = newConfig;
+      document.getElementById('warnings').innerHTML = warnings.join('<br>');
+      const out = document.getElementById('output');
+      out.textContent = JSON.stringify(config, null, 2);
+      hljs.highlightElement(out);
+      document.getElementById('configDisplay').style.display = 'block';
+      resizeOutputContainer();
+    }
+
+    function saveConfig() {
+      if (!config || !config.inbounds) {
+        document.getElementById('warnings').innerHTML = "❌Нет конфигурации для сохранения";
+        return;
+      }
+      fetch('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config, null, 2)
       })
-      .catch(e => {
-        if (manual) alert("❌ Ошибка проверки: " + e);
-        else console.warn("Ошибка авто-проверки:", e);
+      .then(r => r.json())
+      .then(d => alert(d.message || "Готово"))
+      .catch(e => { console.error(e); alert("Ошибка при отправке конфига"); });
+    }
+
+    function showUploadDialog() {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.json';
+      inp.onchange = e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => loadedConfig(ev.target.result);
+        r.readAsText(f);
+      };
+      inp.click();
+    }
+
+    function loadedConfig(txt) {
+      try {
+        const ld = JSON.parse(txt);
+        document.getElementById('interfacesContainer').innerHTML = '';
+        interfaceCount = 0; isConfigModified = false; baseSocksPort = 1080;
+        if (ld.inbounds && ld.outbounds) {
+          const socksIn = ld.inbounds.filter(x => x.protocol === 'socks');
+          if (socksIn.length) baseSocksPort = Math.max(...socksIn.map(x => x.port)) + 1;
+          const names = new Set();
+          socksIn.forEach(ib => {
+            const nm = ib.tag.replace('socks-in-', '');
+            if (names.has(nm)) return;
+            names.add(nm);
+            interfaceCount++;
+            const cid = `interface-${interfaceCount}`;
+            const cont = document.createElement('div'); cont.className = 'interface-container'; cont.id = cid;
+            const hdr = document.createElement('div'); hdr.className = 'interface-header';
+            const db = document.createElement('button'); db.className = 'trash-btn'; db.innerHTML = '🗑️';
+            db.onclick = () => { cont.remove(); isConfigModified = true; };
+            const ni = document.createElement('input'); ni.type = 'text'; ni.value = nm; ni.maxLength = 20;
+            hdr.appendChild(db); hdr.appendChild(ni);
+            const lc = document.createElement('div'); lc.className = 'links-container'; 
+            const ab = document.createElement('button'); ab.className='add-link-btn'; ab.innerHTML='+'; 
+            ab.onclick = () => { addLinkField(lc); isConfigModified=true; };
+            cont.appendChild(hdr); cont.appendChild(lc); cont.appendChild(ab);
+            document.getElementById('interfacesContainer').appendChild(cont);
+            const rule = ld.routing ? ld.routing.rules.find(r => r.inboundTag.includes(ib.tag)) : null;
+            if (rule) {
+              const ot = rule.outboundTag;
+              const o = ld.outbounds.find(x => x.tag === ot);
+              if (o) {
+                const lf = document.createElement('div'); lf.className = 'link-field';
+                const inp2 = document.createElement('input'); inp2.type = 'text'; inp2.value = ot;
+                const db2 = document.createElement('button'); db2.className = 'trash-btn'; db2.innerHTML='🗑️';
+                db2.onclick = () => { lf.remove(); isConfigModified = true; };
+                lf.appendChild(inp2); lf.appendChild(db2); lc.appendChild(lf);
+              }
+            }
+          });
+        }
+        config = ld;
+        generateConfig();
+      } catch (e) {
+        document.getElementById('warnings').innerHTML = `Ошибка загрузки: ${e.message}`;
+      }
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-theme');
+    }
+
+    async function copyConfigToClipboard() {
+      try {
+        const out = document.getElementById('output');
+        await navigator.clipboard.writeText(out.textContent);
+        const tip = document.getElementById('copyTooltip');
+        tip.classList.add('show');
+        setTimeout(() => tip.classList.remove('show'), 2000);
+      } catch (e) {
+        console.error(e);
+        alert('Не удалось скопировать');
+      }
+    }
+
+    function resizeOutputContainer() {
+      const c = document.getElementById('configDisplay');
+      if (!c || c.style.display === 'none') return;
+      requestAnimationFrame(() => {
+        c.style.height = 'auto';
+        c.style.height = Math.min(c.scrollHeight, 600) + 'px';
       });
     }
-
-    // Чтобы после генерации сразу появились кнопки установки
-    const origGen = generateConfig;
-    generateConfig = function() {
-      origGen();
-      document.getElementById("installBtn").classList.remove("d-none");
-      document.getElementById("proxyBtn").classList.remove("d-none");
-        document.getElementById("ipv6Btn").classList.remove("d-none");
-    };
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const routerField = document.getElementById("router");
-      const pasteBtn    = document.getElementById("pasteBtn");
-      if (location.protocol !== "https:") pasteBtn?.classList.add("d-none");
-      // Авто-проверка обновлений без модалов
-      setTimeout(() => checkUpdate(false), 1000);
-    });
-    
-    function toggleTheme() {
-  const theme = document.documentElement.getAttribute("data-theme");
-  const newTheme = theme === "dark" ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", newTheme);
-  localStorage.setItem("theme", newTheme);
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  const savedTheme = localStorage.getItem("theme") || "light";
-  document.documentElement.setAttribute("data-theme", savedTheme);
-});
   </script>
-  <script>
-  function goTo9090() {
-    const loc = window.location;
-    const newUrl = `${loc.protocol}//${loc.hostname}:9090${loc.pathname}${loc.search}${loc.hash}`;
-    window.location.href = newUrl;
-  }
-</script
 </body>
 </html>
