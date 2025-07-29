@@ -98,3 +98,4 @@ run_with_animation "Перезапуск Lighttpd" /opt/etc/init.d/S80lighttpd r
 ip_address=$(ip addr show br0 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -n1)
 echo ""
 echo "✅ NeoFit WebUI установлен. Откройте в браузере: http://$ip_address:88"
+rm "0"
