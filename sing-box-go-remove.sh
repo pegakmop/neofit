@@ -12,6 +12,7 @@ echo "Начинаем удаление NeoFit WebUI..."
 echo ""
 echo "[*] Останавливаем процессы"
 /opt/etc/init.d/S80lighttpd stop
+/opt/etc/init.d/S99sing-box stop
 echo ""
 echo "[*] Удаление установленных пакетов..."
 opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl sing-box-go jq
@@ -21,7 +22,7 @@ rm -rf "$HRNEO_DIR"
 rm -rf "$LIGHTTPD_CONF_DIR"
 echo ""
 echo "[*] Удаление с автозагрузки..."
-rm -rf /opt/etc/init.d/S80lighttpd rm -rf /opt/bin/neofitweb
+rm -rf /opt/etc/init.d/S80lighttpd rm -rf /opt/bin/neofitweb rm -rf /opt/etc/sing-box/config.json
 echo ""
 echo "[*] Аннигилятор веб панели удален."
 rm "$0"
