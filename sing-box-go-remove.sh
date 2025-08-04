@@ -22,7 +22,9 @@ rm -rf "$HRNEO_DIR"
 rm -rf "$LIGHTTPD_CONF_DIR"
 echo ""
 echo "[*] Удаление с автозагрузки..."
-rm -rf /opt/etc/init.d/S80lighttpd rm -rf /opt/bin/neofitweb rm -rf /opt/etc/sing-box/config.json
+rm -rf /opt/etc/init.d/S80lighttpd
+rm -rf /opt/bin/neofitweb
+rm -rf /opt/etc/sing-box
 echo ""
 echo "[*] Аннигилятор веб панели удален."
 rm "$0"
