@@ -7,4 +7,7 @@
 ```
 curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/xray/xray-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
-Удалить можно форматировав флешку или внутренний накопитель роутера, убрав ентвар,мне лень писать аннигилятор.
+Удалить можно командой:
+```
+curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/xray/xray-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
+```
