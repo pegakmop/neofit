@@ -11,3 +11,6 @@ curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/re
 ```
 curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
+
+
+[Установить на сервер можно командой]([https://github.com/pegakmop/neofit/blob/xray/xray-vless-server-install.md](https://github.com/pegakmop/neofit/blob/main/xray-vless-server-install.md))
