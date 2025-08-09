@@ -13,4 +13,4 @@ curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/re
 ```
 
 
-(Установить на сервер можно командой](https://github.com/pegakmop/neofit/blob/xray/xray-vless-server-install.md)
+[Установить на сервер можно командой](https://github.com/pegakmop/neofit/blob/xray/xray-vless-server-install.md)
