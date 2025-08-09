@@ -3,11 +3,11 @@
 канал: https://t.me/neofitkeenetic
 чат: https://t.me/+f_8QmNYgg180Njg6
 
-Установить можно командой:
+Установить на роутер можно командой:
 ```
 curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
-Удалить можно командой:
+Удалить с роутера можно командой:
 ```
 curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
