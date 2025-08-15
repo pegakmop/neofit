@@ -34,14 +34,14 @@ echo ""
 echo "Если пользователь не согласен с заявлением выше, пользователь обязан прервать установку софта нажав ^C либо закрыв терминал!"
 sleep 6
 echo ""
-echo "Начинаем установку NeoFit WebUI..."
+echo "Начинаем установку NeoFit Xray WebUI..."
 echo ""
 run_with_animation "Добавление DNS 9.9.9.9 и 8.8.4.4"
 ndmc -c "dns-proxy tls upstream 9.9.9.9 sni dns.quad9.net" >/dev/null 2>&1
 ndmc -c "dns-proxy tls upstream 8.8.4.4 sni dns.google" >/dev/null 2>&1
 ndmc -c "system configuration save" >/dev/null 2>&1
 echo ""
-echo "Начинается установка NeoFit WebUI..."
+echo "Начинается установка NeoFit Xray WebUI..."
 
 run_with_animation "Установка Lighttpd + PHP8" \
     opkg install lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray
