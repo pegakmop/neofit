@@ -16,7 +16,26 @@ echo ""
 echo "Если пользователь не согласен с заявлением выше, пользователь обязан прервать установку софта нажав ^C либо закрыв терминал!"
 sleep 5
 echo ""
-echo "Начинаем установку NeoFit WebUI..."
+
+# === Проверка свободного места на диске ===
+REQ_KB=57913
+CHECK_PATH="/opt"
+AVAILABLE_KB=$(df -Pk "$CHECK_PATH" 2>/dev/null | awk 'NR==2 {print $4}')
+AVAILABLE_MB=$(( AVAILABLE_KB / 1024 ))
+if [ -z "$AVAILABLE_KB" ]; then
+    echo "[X] Не удалось определить свободное место на $CHECK_PATH."
+    echo "[*] Проверьте, что раздел примонтирован и доступен."
+    exit 1
+fi
+if [ "$AVAILABLE_KB" -gt "$REQ_KB" ]; then
+    echo "[+] Начинаем установку NeoFit WebUI..."
+else
+    echo "[X] Недостаточно памяти на внутреннем диске для установки NeoFit sing-box версии"
+    echo "[*] Свободно ${AVAILABLE_MB} МБ, нужно минимум 70 МБ"
+    echo "[*] Используйте внешний сьемный диск или поставьте версию NeoFit Xray"
+    exit 1
+fi
+
 echo ""
 echo "[*] Добавление DNS 9.9.9.9 и 8.8.4.4"
 ndmc -c "dns-proxy tls upstream 9.9.9.9 sni dns.quad9.net" >/dev/null 2>&1
