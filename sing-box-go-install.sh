@@ -18,7 +18,7 @@ sleep 5
 echo ""
 
 # === Проверка свободного места на диске ===
-REQ_KB=57913
+REQ_KB=65000
 CHECK_PATH="/opt"
 AVAILABLE_KB=$(df -Pk "$CHECK_PATH" 2>/dev/null | awk 'NR==2 {print $4}')
 AVAILABLE_MB=$(( AVAILABLE_KB / 1024 ))
