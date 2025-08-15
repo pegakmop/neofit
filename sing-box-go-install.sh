@@ -28,7 +28,7 @@ if [ -z "$AVAILABLE_KB" ]; then
     exit 1
 fi
 if [ "$AVAILABLE_KB" -gt "$REQ_KB" ]; then
-    echo "[+] Начинаем установку NeoFit WebUI..."
+    echo "[+] Начинаем установку NeoFit Sing-box WebUI..."
 else
     echo "[X] Недостаточно памяти на внутреннем диске для установки NeoFit sing-box версии"
     echo "[*] Свободно ${AVAILABLE_MB} МБ, нужно минимум 65 МБ, для установки, после установки занимает ~33 МБ"
