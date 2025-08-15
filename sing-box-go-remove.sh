@@ -25,6 +25,8 @@ echo "[*] Удаление с автозагрузки..."
 rm -rf /opt/etc/init.d/S80lighttpd
 rm -rf /opt/bin/neofitweb
 rm -rf /opt/etc/sing-box
+ndmc -c "no interface Proxy0" >/dev/null 2>&1
+ndmc -c "system configuration save" >/dev/null 2>&1
 echo ""
 echo "[*] Аннигилятор веб панели удален."
 rm "$0"
