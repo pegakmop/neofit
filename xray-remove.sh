@@ -41,6 +41,9 @@ run_with_animation "Удаление директорий" \
     rm -rf /opt/share/www/xray 
     rm -rf /opt/etc/lighttpd
     rm -rf /opt/etc/xray
+    ndmc -c "no interface Proxy0" >/dev/null 2>&1
+    ndmc -c "system configuration save" >/dev/null 2>&1
+echo ""
 
 echo ""
 echo "✅ NeoFit WebUI удален"
