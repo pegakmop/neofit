@@ -15,7 +15,7 @@ echo "[*] Останавливаем процессы"
 /opt/etc/init.d/S99sing-box stop
 echo ""
 echo "[*] Удаление установленных пакетов..."
-opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl sing-box-go jq
+opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl sing-box-go jq --force-depends
 echo ""
 echo "[*] Удаление директорий..."
 rm -rf "$HRNEO_DIR"
