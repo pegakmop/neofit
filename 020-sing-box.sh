@@ -1,5 +1,7 @@
 #!/opt/bin/sh
-
+#curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/020-sing-box.sh -o /opt/etc/ndm/netfilter.d/020-sing-box.sh
+#chmod +x /opt/etc/ndm/netfilter.d/020-sing-box.sh
+#/opt/etc/ndm/netfilter.d/020-sing-box.sh
 # Ждём 5 секунд, чтобы интерфейс tun+ успел появиться
 sleep 5
 
