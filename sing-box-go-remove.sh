@@ -22,10 +22,12 @@ rm -rf "$HRNEO_DIR"
 rm -rf "$LIGHTTPD_CONF_DIR"
 echo ""
 echo "[*] Удаление с автозагрузки..."
+rm -rf /opt/etc/init.d/S99sing-box-neofit-opkgtun
 rm -rf /opt/etc/init.d/S80lighttpd
 rm -rf /opt/bin/neofitweb
 rm -rf /opt/etc/sing-box
 ndmc -c "no interface Proxy0" >/dev/null 2>&1
+ndmc -c "no interface OpkgTun0" >/dev/null 2>&1
 ndmc -c "system configuration save" >/dev/null 2>&1
 echo ""
 echo "[*] Аннигилятор веб панели удален."
