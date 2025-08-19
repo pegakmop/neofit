@@ -35,7 +35,7 @@ echo ""
 echo "Начинается удаление NeoFit WebUI..."
 
 run_with_animation "Удаление Lighttpd + PHP8" \
-    opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray
+    opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray --force-depends
 
 run_with_animation "Удаление директорий" \
     rm -rf /opt/share/www/xray 
