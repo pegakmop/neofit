@@ -1,0 +1,196 @@
+#!/bin/sh
+# /opt/etc/init.d/S99neofit
+#chmod +x  /opt/etc/init.d/S99neofit
+# 💡 Управление NeoFit для sing-box: установка, удаление, проверка, интерфейсы и т.д. допиливаю до идеала))
+
+ACTION="$1"
+
+# 🛠 Проверка симлинка neofit
+# 🛠 Создаём симлинк на себя
+SCRIPT_PATH="$(readlink -f "$0")"
+mkdir -p /opt/bin
+ln -sf "$SCRIPT_PATH" /opt/bin/neofit && \
+  printf "[⚙️] Введите команду для подсказки: neofit\n"
+
+# Определение IP-адреса локального интерфейса br0
+ip_address=$(ip addr show br0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+
+# Цвета
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+log_ok()   { echo -e "${GREEN}[✅]${NC} $1"; logger -t S99neofit "✅ $1"; }
+log_warn() { echo -e "${YELLOW}[⚠️]${NC} $1"; logger -t S99neofit "⚠️ $1"; }
+log_err()  { echo -e "${RED}[❌]${NC} $1" >&2; logger -t S99neofit "❌ $1"; }
+log()      { echo -e "${GREEN}[ℹ️]${NC} $1"; logger -t S99neofit "ℹ️ $1"; }
+
+if [ -z "$ip_address" ]; then
+  log_err "⚠️Не удалось определить IP br0 — проверьте, что интерфейс существует"
+  exit 1
+fi
+
+entware_silent() { "$@" >/dev/null 2>&1; }
+ndmc_silent() {
+  ndmc -c "$1" >/dev/null 2>&1
+}
+
+check_status() {
+  STATUS=$(/opt/etc/init.d/S99sing-box status)
+  if echo "$STATUS" | grep -qi "alive"; then
+    log_ok "🔜 sing-box ✅работает:\n $STATUS"
+  elif echo "$STATUS" | grep -qi "dead"; then
+    log_err "🔜 sing-box ❌НЕ запущен:\n $STATUS"
+  else
+    log_warn "🔜 sing-box ⚠️Ошибка:\n $STATUS"
+  fi
+}
+
+if [ "$ACTION" = "start" ] || [ "$ACTION" = "restart" ]; then
+  log_warn "🗑️ Удаляю link интерфейса opkgtun0"
+  entware_silent ip link delete opkgtun0
+  log_warn "🔄 Перезапускаю службу sing-box"
+  entware_silent /opt/etc/init.d/S99sing-box restart
+  sleep 2
+  check_status
+  exit 0
+fi
+
+if [ "$ACTION" = "status" ]; then
+  check_status
+  exit 0
+fi
+
+if [ "$ACTION" = "stop" ]; then
+  log_warn "❌Останавливаю службу sing-box"
+  entware_silent /opt/etc/init.d/S99sing-box stop
+  sleep 2
+  check_status
+  exit 0
+fi
+
+if [ "$ACTION" = "myip-proxy" ]; then
+  log "🌍 Проверка IP через Proxy0 (t2s0)"
+  curl --interface t2s0 myip.wtf || log_warn "❌ Не удалось получить IP через Proxy0"
+  exit 0
+fi
+
+if [ "$ACTION" = "myip-opkgtun" ]; then
+  log "🌍 Проверка IP через opkgtun0"
+  curl --interface opkgtun0 myip.wtf || log_warn "❌ Не удалось получить IP через opkgtun0"
+  exit 0
+fi
+
+if [ "$ACTION" = "ping-opkgtun" ]; then
+  log "📶 Проверка пинга через opkgtun0"
+  ping -I opkgtun0 1.1.1.1 -c 3 || log_warn "❌ Пинг через opkgtun0 не удался"
+  exit 0
+fi
+
+if [ "$ACTION" = "ping-proxy" ]; then
+  log "📶 Проверка пинга через Proxy0"
+  ping -I t2s0 1.1.1.1 -c 3 || log_warn "❌ Пинг через Proxy0 не удался"
+  exit 0
+fi
+
+if [ "$ACTION" = "remove" ]; then
+  log "🗑️ Удаление линка opkgtun0"
+  entware_silent ip link delete opkgtun0
+  log "❌ Остановка sing-box"
+  entware_silent /opt/etc/init.d/S99sing-box stop
+  sleep 1
+  log "🗑️ Удаление интерфейсов"
+  ndmc_silent "no interface Proxy0"
+  ndmc_silent "no interface OpkgTun0"
+  ndmc_silent "system configuration save"
+  log_ok "✅ Интерфейсы и link удалены"
+  exit 0
+fi
+
+if [ "$ACTION" = "add-proxy" ]; then
+  log "➕ Создание интерфейса Proxy0 (локальный IP: $ip_address)"
+  ndmc_silent "interface Proxy0"
+  ndmc_silent "interface Proxy0 description NeoFit-t.me/pegakmop-Proxy0-$ip_address:1080"
+  ndmc_silent "interface Proxy0 proxy protocol socks5"
+  ndmc_silent "interface Proxy0 proxy socks5-udp"
+  ndmc_silent "interface Proxy0 proxy upstream $ip_address 1080"
+  ndmc_silent "interface Proxy0 ip global 1"
+  ndmc_silent "interface Proxy0 up"
+  ndmc_silent "system configuration save"
+  log_warn "🔁 Перезапуск sing-box"
+  entware_silent /opt/etc/init.d/S99sing-box restart
+  sleep 1
+  check_status
+  exit 0
+fi
+
+if [ "$ACTION" = "del-proxy" ]; then
+  log_warn "🗑️ Удаление интерфейса Proxy0"
+  ndmc_silent "no interface Proxy0"
+  ndmc_silent "system configuration save"
+  log_ok "🗑️ Proxy0 удалён"
+  exit 0
+fi
+
+if [ "$ACTION" = "add-opkgtun" ]; then
+  log "➕ Создание интерфейса OpkgTun0 (адрес: 172.16.250.1)"
+  ndmc_silent "interface OpkgTun0"
+  ndmc_silent "interface OpkgTun0 description OpkgTun0"
+  ndmc_silent "interface OpkgTun0 ip address 172.16.250.1/30"
+  ndmc_silent "interface OpkgTun0 ip global 1"
+  ndmc_silent "interface OpkgTun0 up"
+  ndmc_silent "system configuration save"
+  sleep 3
+  log "🗑️ Удаление линка opkgtun0"
+  entware_silent ip link delete opkgtun0
+  sleep 1
+  log_warn "🔁 Перезапуск sing-box"
+  entware_silent /opt/etc/init.d/S99sing-box restart
+  sleep 2
+  check_status
+  exit 0
+fi
+
+if [ "$ACTION" = "del-opkgtun" ]; then
+  log_warn "🗑️ Удаление линка opkgtun0"
+  entware_silent ip link delete opkgtun0
+  log_warn "🗑️ Удаление интерфейса OpkgTun0"
+  ndmc_silent "no interface OpkgTun0"
+  ndmc_silent "system configuration save"
+  log_ok "✅ OpkgTun0 удалён"
+  exit 0
+fi
+
+if [ "$ACTION" = "install" ]; then
+  log "➕ Создание интерфейса Proxy0 (локальный IP: $ip_address)"
+  ndmc_silent "interface Proxy0"
+  ndmc_silent "interface Proxy0 description NeoFit-t.me/pegakmop-Proxy0-$ip_address:1080"
+  ndmc_silent "interface Proxy0 proxy protocol socks5"
+  ndmc_silent "interface Proxy0 proxy socks5-udp"
+  ndmc_silent "interface Proxy0 proxy upstream $ip_address 1080"
+  ndmc_silent "interface Proxy0 ip global 1"
+  ndmc_silent "interface Proxy0 up"
+  ndmc_silent "system configuration save"
+  sleep 1
+  log "➕ Создание интерфейса OpkgTun0 (адрес: 172.16.250.1)"
+  ndmc_silent "interface OpkgTun0"
+  ndmc_silent "interface OpkgTun0 description OpkgTun0"
+  ndmc_silent "interface OpkgTun0 ip address 172.16.250.1/30"
+  ndmc_silent "interface OpkgTun0 ip global 1"
+  ndmc_silent "interface OpkgTun0 up"
+  ndmc_silent "system configuration save"
+  sleep 3
+  log "🗑️ Удаление линка opkgtun0"
+  entware_silent ip link delete opkgtun0
+  sleep 1
+  log_warn "🔄 Перезапуск sing-box"
+  entware_silent /opt/etc/init.d/S99sing-box restart
+  sleep 2
+  check_status
+  log_ok "✅ Установка Proxy0 и OpkgTun0 завершена"
+  exit 0
+fi
+
+log_warn "$0 \nДоступные команды: neofit {start|stop|restart|status|myip-proxy|myip-opkgtun|ping-proxy|ping-opkgtun|remove|install|add-proxy|del-proxy|add-opkgtun|del-opkgtun}\nНаш канал: t.me/neofitkeenetic \nНаш чат: t.me/+f_8QmNYgg180Njg6 \nGitHub: github.com/pegakmop/neofit"
+exit 1
