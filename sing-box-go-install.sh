@@ -112,7 +112,7 @@ echo ""
 echo "[*] Создание нового index.php..."
 curl -sL https://raw.githubusercontent.com/pegakmop/pegakmop.github.io/refs/heads/main/entware/sing-box-go-gen.php -o /opt/share/www/sing-box-go/index.php
 echo "[*] Добавление в автозагрузку..."
-curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/S99sing-box-neofit-opkgtun -o /opt/etc/init.d/S99sing-box-neofit-opkgtun
+curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/S99neofit -o /opt/etc/init.d/S99neofit
 echo ""
 if [ -f "$LIGHTTPD_CONF_FILE" ]; then
     echo "[*] Удаление конфигурации Lighttpd..."
@@ -143,7 +143,7 @@ echo ""
 echo "[*] Установка прав и перезапуск..."
 ln -sf /opt/etc/init.d/S80lighttpd /opt/bin/neofitweb
 /opt/etc/init.d/S80lighttpd restart
-chmod +x /opt/etc/init.d/S99sing-box-neofit-opkgtun
+chmod +x /opt/etc/init.d/S99neofit
 echo ""
 echo "[*] Для перезапуска панели в терминале команда: neofitweb restart"
 echo ""
