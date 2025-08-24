@@ -276,9 +276,7 @@ SH;
       <div class="card-body">
       <div class="text-end mb-3">
       </div> 
-        <h3 class="card-title mb-4" <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
-   👉 🌓 👈 NeoFit для Sing-box
-  </button></h3>
+        <h3 class="card-title mb-4" <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()"> 👉 🌓 👈 NeoFit для Sing-box</button></h3>
 
 <div class="mb-3">
   <label for="router" class="form-label">
@@ -946,6 +944,6 @@ function goTo9090() {
   const newUrl = `${loc.protocol}//${loc.hostname}:9090${loc.pathname}${loc.search}${loc.hash}`;
   window.open(newUrl, '_blank');
 }
-</script
+</script>
 </body>
 </html>
