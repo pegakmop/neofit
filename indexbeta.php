@@ -8,10 +8,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     for ($i = 0; $i < 3; $i++) {
         $output = shell_exec("ndmc -c \"components list\" 2>&1");
-        if (strpos($output, "name: proxy") !== false && strpos($output, "installed:") !== false) {
-            $success = true;
-            break;
+        // === НАДЁЖНАЯ ПРОВЕРКА (эмуляция: grep -A15 "name: proxy" | grep "installed:")
+        $out = $output ?? '';
+        $lines = preg_split('/\r?\n/', $out);
+        $count = is_array($lines) ? count($lines) : 0;
+        for ($j = 0; $j < $count; $j++) {
+            if (stripos($lines[$j], 'name: proxy') !== false) {
+                // проверяем текущую + 15 следующих строк
+                $slice = array_slice($lines, $j, 16);
+                foreach ($slice as $line) {
+                    if (stripos($line, 'installed:') !== false) {
+                        $success = true;
+                        break 2; // из обоих циклов
+                    }
+                }
+            }
         }
+        // === КОНЕЦ ПРАВКИ
+
         usleep(1111111); // подождать полсекунды и попробовать снова
     }
 
