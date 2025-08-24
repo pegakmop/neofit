@@ -12,11 +12,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = true;
             break;
         }
-        usleep(500000); // подождать полсекунды и попробовать снова
+        usleep(1111111); // подождать полсекунды и попробовать снова
     }
 
     if ($success) {
-        echo "✅ Клиент прокси установлен.";
+        echo "✅ Клиент прокси установлен.\n⏳ Начинаю установку Proxy0 и OpkgTun0 на кинетик.\n";
     } else {
         echo "❌ Компонент клиент прокси не установлен.\n❗️ Установка Proxy0 отменена.\n⚠️ В веб интерфейсе роутера Keenetic заходим во вкладку > Параметры системы >> Изменить набор компонентов >>> Клиент прокси >>>> Поставить галочку и сохранить, роутер перезагрузится и установит компонент!";
     }
@@ -80,11 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Повторная проверка IP (proxy)
     if (isset($input['check_only'])) {
         $externalIp = trim(shell_exec('curl -s myip.wtf'));
-        sleep(3);
-        $proxyIp    = trim(shell_exec('curl -s --interface t2s0 myip.wtf'));
+        sleep(2);
+        $proxyIp = trim(shell_exec('curl -s --interface t2s0 myip.wtf'));
+        sleep(2);
+        $opkgtunIp = trim(shell_exec('curl -s --interface opkgtun0 myip.wtf'));
         echo json_encode([
             'external_ip' => $externalIp,
-            'proxy_ip'    => $proxyIp
+            'proxy_ip'    => $proxyIp,
+            'opkgtun_ip' => $opkgtunIp
         ]);
         exit;
     }
@@ -109,17 +112,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['error' => 'Ошибка при сохранении файла.']);
             exit;
         }
-        sleep(5);
-        $restart    = shell_exec('/opt/root/opkgtun.sh 2>&1');
-        sleep(5);
+        $nolink    = shell_exec('/opt/sbin/ip link delete opkgtun0 2>&1');
+        sleep(1);
+        $restart    = shell_exec('/opt/etc/init.d/S99sing-box restart 2>&1');
+        sleep(1);
         $status     = shell_exec('/opt/etc/init.d/S99sing-box status 2>&1');
-        sleep(8);
-        $externalIp = trim(shell_exec('ping -I opkgtun0 1.1.1.1 -c 3'));
-        #$externalIp = trim(shell_exec('curl -s myip.wtf'));
-        sleep(3);
+        sleep(1);
+        $externalIp = trim(shell_exec('curl -s myip.wtf'));
+        sleep(1);
         $proxyIp    = trim(shell_exec('curl -s --interface t2s0 myip.wtf'));
 
         echo json_encode([
+            'nolink'     => $nolink,
             'restart'     => $restart,
             'status'      => $status,
             'external_ip' => $externalIp,
@@ -278,9 +282,7 @@ SH;
       <div class="card-body">
       <div class="text-end mb-3">
       </div> 
-        <h3 class="card-title mb-4" <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
-   👉 🌓 👈 NeoFit для Sing-box
-  </button></h3>
+        <h3 class="card-title mb-4"> <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">   👉 🌓 👈 NeoFit для Sing-box</button></h3>
 
 <div class="mb-3">
   <label for="router" class="form-label">
@@ -347,13 +349,13 @@ vless://тутследующийключ
           <button
             class="btn btn-primary"
             onclick="generateConfig()"
-          >Установить на Кинетик</button>
+          >Установить: Proxy0 + OpkgTun0 +  /opt/etc/sing-box/config.json</button>
           <button
             id="pasteBtn"
             class="btn btn-outline-secondary btn-sm"
             onclick="pasteClipboard()"
           >📋 Вставить url</button>
-          <button hidden
+          <button
   id="ipv6Btn"
   class="btn btn-danger d-none"
   onclick="disableIPv6()">Отключить: Протокол IPv6</button>
@@ -362,7 +364,7 @@ vless://тутследующийключ
           <button hidden 
           id="installAllBtn" 
           class="btn btn-success d-none"
-          onclick="installAll()">🚀 Установить Proxy0 + config.json</button>
+          onclick="installAll()">🚀 Установить скрыта кнопка</button>
         </div>
 
         <div id="resultWrapper" class="d-none">
@@ -409,7 +411,7 @@ vless://тутследующийключ
           style="white-space: pre-wrap;"
         >Ожидание...</pre>
         <div class="text-end mt-3">
-          <button hidden 
+          <button
             id="recheckBtn"
             class="btn btn-outline-primary d-none"
             onclick="recheckProxy()"
@@ -671,9 +673,13 @@ vless://тутследующийключ
         inbounds: [
           {
             type: "tun",
+            tag: "opkgtun0",
             interface_name: "opkgtun0",
-            domain_strategy: "ipv4_only",
             address: "172.16.250.1/30",
+            domain_strategy: "ipv4_only",
+            endpoint_independent_nat: true,
+            mtu: 9000,
+            stack: "gvisor",
             auto_route: false,
             strict_route: false,
             sniff: true,
@@ -693,7 +699,6 @@ vless://тутследующийключ
           auto_detect_interface: false,
           final: tags.length ? "select" : "direct",
           rules: [
-            { protocol: "dns", outbound: "dns-out" },
             { network: "udp", port: 443, outbound: "block" }
           ]
         }
@@ -761,12 +766,11 @@ vless://тутследующийключ
 
 
 
-
-    function installAll() {
-  const cfg      = document.getElementById("result").textContent.trim();
+function installAll() {
+  const cfg = document.getElementById("result").textContent.trim();
   const routerIp = document.getElementById("router").value.trim();
-  const modal    = new bootstrap.Modal(document.getElementById('installModal'));
-  const out      = document.getElementById("installOutput");
+  const modal = new bootstrap.Modal(document.getElementById('installModal'));
+  const out = document.getElementById("installOutput");
 
   if (!cfg || !routerIp) {
     alert("❗️ Нужно минимум один ключ чтобы сгенерировать config.json и указать IP роутера, если он отличается от указанного выше!");
@@ -785,143 +789,101 @@ vless://тутследующийключ
   .then(res => res.text())
   .then(txt => {
     out.textContent += txt;
+
     if (!txt.includes("✅")) {
-      out.textContent += "\n⛔️ Операция установки отменена. Установите компонент клиент прокси и повторите попытку.";
+      out.textContent += "\n⛔️ Операция установки отменена. Установите компонент клиент прокси и повторите попытку.\n🔜Параметры системы🔜Изменить набор компонентов🔜Клиент прокси🔜установить галочку и сохранить.\n📲Позволяет устанавливать соединения через SOCKS/HTTP-прокси с данного устройства.";
       return;
     }
 
-    out.textContent += "\n⏳ Сохранение config.json...\n";
+    out.textContent += "⏳ Установка Proxy0 и OpkgTun0 на ваш кинетик...\n";
+    
+    // 2. Установка Proxy0
+    const cmds = [
+      'ndmc -c "no interface Proxy0" >/dev/null 2>&1',
+      'ndmc -c "system configuration save" >/dev/null 2>&1',
+      'ndmc -c "interface Proxy0" >/dev/null 2>&1',
+      `ndmc -c "interface Proxy0 description NeoFit-Proxy0-${routerIp}:1080" >/dev/null 2>&1`,
+      'ndmc -c "interface Proxy0 proxy protocol socks5" >/dev/null 2>&1',
+      'ndmc -c "interface Proxy0 proxy socks5-udp" >/dev/null 2>&1',
+      `ndmc -c "interface Proxy0 proxy upstream ${routerIp} 1080" >/dev/null 2>&1`,
+      'ndmc -c "interface Proxy0 up" >/dev/null 2>&1',
+      'ndmc -c "interface Proxy0 ip global 1" >/dev/null 2>&1',
+      'ndmc -c "no interface Proxy0 ipv6 address" >/dev/null 2>&1',
+      'ndmc -c "system configuration save" >/dev/null 2>&1',
+      '/opt/etc/init.d/S99sing-box stop >/dev/null 2>&1',
+      'ndmc -c "no interface OpkgTun0" >/dev/null 2>&1',
+      'ndmc -c "system configuration save" >/dev/null 2>&1',
+      'ndmc -c "interface OpkgTun0" >/dev/null 2>&1',
+      'ndmc -c "interface OpkgTun0 ip address 172.16.250.1/30" >/dev/null 2>&1',
+      'ndmc -c "interface OpkgTun0 ip global 1" >/dev/null 2>&1',
+      'ndmc -c "interface OpkgTun0 up" >/dev/null 2>&1',
+      'ndmc -c "system configuration save" >/dev/null 2>&1',
+      'ls /opt/etc/sing-box >/dev/null 2>&1'
+    ];
 
-    // 2. Установка конфига
     fetch(getPostUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ config: cfg })
+      body: JSON.stringify({ proxy_commands: cmds })
     })
-    .then(res => res.json())
-    .then(data => {
-      out.textContent += "✅ Конфиг сохранен: " + data.message + "\n⏳ Настройка интерфейсов...\n";
+    .then(res => res.text())
+    .then(txt => {
+      out.textContent += "✅ Proxy0 + OpkgTun0 установлены.\n⏳ Сохраняю конфиг /opt/etc/sing-box/config.json...";
 
-      // 3. Установка Proxy0 и OpkgTun0
-      const cmds = [
-        // --- Proxy0 ---
-        'ndmc -c "no interface Proxy0" >/dev/null 2>&1',
-        'ndmc -c "system configuration save" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0" >/dev/null 2>&1',
-        `ndmc -c "interface Proxy0 description NeoFit-Proxy0-${routerIp}:1080" >/dev/null 2>&1`,
-        'ndmc -c "interface Proxy0 proxy protocol socks5" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0 proxy socks5-udp" >/dev/null 2>&1',
-        `ndmc -c "interface Proxy0 proxy upstream ${routerIp} 1080" >/dev/null 2>&1`,
-        'ndmc -c "interface Proxy0 up" >/dev/null 2>&1',
-        'ndmc -c "interface Proxy0 ip global 1" >/dev/null 2>&1',
-        'ndmc -c "system configuration save" >/dev/null 2>&1',
-        'ndmc -c "no interface Proxy0 ipv6 address" >/dev/null 2>&1',
-
-        // --- OpkgTun0 ---
-        '/opt/etc/init.d/S99sing-box stop',
-        'ndmc -c "no interface OpkgTun0"',
-        'ndmc -c "system configuration save"',
-        'ndmc -c "interface OpkgTun0"',
-        'ndmc -c "interface OpkgTun0 ip address 172.16.250.1/30"',
-        'ndmc -c "interface OpkgTun0 ip global 1"',
-        'ndmc -c "interface OpkgTun0 up"',
-        'ndmc -c "system configuration save"',       // save before waiting
-        'sleep 9',                                   // ждём 6 секунд
-        '/opt/sbin/ip route del default via 172.16.250.1 dev opkgtun0 metric 1500',
-        '/opt/sbin/ip route add default via 172.16.250.1 dev opkgtun0 metric 1500',
-        'ndmc -c "system configuration save"',       // сохраняем после маршрутов
-        '/opt/sbin/ip link delete opkgtun0',
-        '/opt/etc/init.d/S99sing-box restart',
-        '/opt/etc/init.d/S99sing-box status'
-      ];
-
+      // 3. Установка config.json
       fetch(getPostUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proxy_commands: cmds })
+        body: JSON.stringify({ config: cfg })
       })
-      .then(res => res.text())
-      .then(cmdOut => {
-        out.textContent += cmdOut + "\n⏳ Проверка IP...\n";
-
-        // 4. Повторная проверка IP
-        fetch(getPostUrl(), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ check_only: true })
-        })
-        .then(res => res.json())
-        .then(ipData => {
-          out.textContent +=
-            "🌐 Провайдерский IP: " + ipData.external_ip +
-            "\n🛡️ Proxy0 IP: "       + ipData.proxy_ip +
-            ((ipData.proxy_ip && ipData.proxy_ip !== ipData.external_ip)
-              ? "\n🎯 Прокси работает!"
-              : "\n❌ Прокси не работает, нажмите кнопку ниже для повторения проверки."
-            ) +
-            "\n🎉 Установка завершена!";
-          document.getElementById("recheckBtn").classList.remove("d-none");
-        })
-        .catch(e => out.textContent += "\n❌ Ошибка при проверке IP:\n" + e);
-
+      .then(res => res.json())
+      .then(data => {
+        out.textContent += "\n✅ Конфиг сохранен:\n" + data.message +
+                           "\n📲 Наличие ошибок Opkgtun0\n" + data.nolink +
+                           "\n🚀 Перезапуск sing-box...\n" + data.restart +
+                           "📟 Статус sing-box...\n" + data.status +
+                           "🌐 Провайдерский IP: " + data.external_ip +
+                           "\n🛡️ Proxy0 IP: " + data.proxy_ip +
+                           ((data.proxy_ip && data.proxy_ip !== data.external_ip)
+                             ? "\n✅ Proxy0 работает!"
+                             : "\n❌ Proxy0 не работает, нажмите кнопку ниже для повторения проверки.") +
+                             "\n🛡️ OpkgTun IP: " + data.proxy_ip +
+                           ((data.proxy_ip && data.opkgtun_ip_ip !== data.external_ip)
+                             ? "\n✅ OpkgTun0 работает!"
+                             : "\n❌ OpkgTun0 не работает, нажмите кнопку ниже для повторения проверки.") +
+                           "\n💳Если хочешь чтобы обновления выходили быстрее поддержи рублем, дав стимул разработчику фиксить баги и выпускать обновления быстрее\n🎉 Установка завершена!";
+        document.getElementById("recheckBtn").classList.remove("d-none");
       })
-      .catch(e => out.textContent += "\n❌ Ошибка настройки интерфейсов:\n" + e);
-
+      .catch(e => out.textContent += "\n❌ Ошибка при установке config.json:\n" + e);
     })
-    .catch(e => out.textContent += "\n❌ Ошибка при установке config.json:\n" + e);
-
+    .catch(e => out.textContent += "\n❌ Ошибка установки Proxy0:\n" + e);
   })
   .catch(e => out.textContent += "\n❌ Ошибка проверки компонента proxy:\n" + e);
 }
 
 
-
-
-
-
-
-    function runUpdate() {
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ run_update: true })
-      })
-      .then(res => res.json())
-      .then(d => { alert(d.message); location.reload(); })
-      .catch(e => alert("❌ Ошибка обновления: " + e));
-    }
-
-    function checkUpdate(manual = true) {
-      const btn = document.getElementById("updateBtn");
-      fetch(getPostUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ check_update: true })
-      })
-      .then(res => res.json())
-      .then(d => {
-        if (d.update_available) {
-          btn.classList.remove("d-none");
-          btn.textContent = `⬇️ Доступно обновление: v${d.latest}`;
-          btn.title = d.show || "";
-          if (manual && confirm(`Доступна новая версия ${d.latest}\n${d.show}\nОбновить?`)) {
-            runUpdate();
-          }
-        } else {
-          btn.classList.add("d-none");
-          if (manual) alert("✅ Вы уже на последней версии.");
-        }
-      })
-      .catch(e => {
-        if (manual) alert("❌ Ошибка проверки: " + e);
-        else console.warn("Ошибка авто-проверки:", e);
-      });
-    }
-
-
-
-
-
+function recheckProxy() {
+  const out = document.getElementById("installOutput");
+  out.textContent += "\n🔄 Повторная проверка IP…";
+  fetch(getPostUrl(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ check_only: true })
+  })
+  .then(res => res.json())
+  .then(d => {
+    out.textContent += `\n🌐 Провайдерский IP: ${d.external_ip}` +
+                       "\n🛡️ Proxy0 IP: " + d.proxy_ip +
+                       ((d.proxy_ip && d.proxy_ip !== d.external_ip)
+                         ? "\n✅ Proxy0 работает!"
+                         : "\n❌ Proxy0 не работает, нажмите кнопку ниже для повторения проверки.") +
+                       "\n🛡️ OpkgTun IP: " + d.opkgtun_ip +
+                       ((d.opkgtun_ip && d.opkgtun_ip !== d.external_ip)
+                         ? "\n✅ OpkgTun0 работает!"
+                         : "\n❌ OpkgTun0 не работает, нажмите кнопку ниже для повторения проверки.");
+  })
+  .catch(e => out.textContent += "\n❌ Ошибка проверки:\n" + e + "\n");
+}
 
     function runUpdate() {
       fetch(getPostUrl(), {
@@ -1023,6 +985,6 @@ function goTo9090() {
   const newUrl = `${loc.protocol}//${loc.hostname}:9090${loc.pathname}${loc.search}${loc.hash}`;
   window.open(newUrl, '_blank');
 }
-</script
+</script>
 </body>
 </html>
