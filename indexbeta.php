@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 📦 Проверка и установка обновления интерфейса
-    $currentVersion    = "0.0.0.10";
+    $currentVersion    = "0.0.0.11";
     $remoteVersionUrl  = "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-version.txt";
     $context           = stream_context_create(["http" => ["timeout" => 3]]);
     $remoteContent     = @file_get_contents($remoteVersionUrl, false, $context);
