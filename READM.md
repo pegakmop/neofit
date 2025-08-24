@@ -1,2 +1,2 @@
-https://github.com/pegakmop/neofit/tree/xray/READMI.md
-https://github.com/pegakmop/neofit/tree/main/READMI.md
+https://github.com/pegakmop/neofit/tree/xray/README.md
+https://github.com/pegakmop/neofit/tree/main/README.md
