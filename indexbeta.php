@@ -141,11 +141,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nolink    = shell_exec('/opt/sbin/ip link delete opkgtun0 2>&1');
         sleep(1);
         $restart    = shell_exec('/opt/etc/init.d/S99sing-box restart 2>&1');
-        sleep(1);
+        sleep(3);
         $status     = shell_exec('/opt/etc/init.d/S99sing-box status 2>&1');
-        sleep(1);
+        sleep(2);
         $externalIp = trim(shell_exec('curl -s myip.wtf'));
-        sleep(1);
+        sleep(2);
         $proxyIp    = trim(shell_exec('curl -s --interface t2s0 myip.wtf'));
 
         echo json_encode([
@@ -308,7 +308,7 @@ SH;
       <div class="card-body">
       <div class="text-end mb-3">
       </div> 
-        <h3 class="card-title mb-4"> <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">   👉 🌓 👈 NeoFit для Sing-box</button></h3>
+        <h3 class="card-title mb-4"> <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">🌓 NeoFit версия с sing-box-go пакетом</button></h3>
 
 <div class="mb-3">
   <label for="router" class="form-label">
@@ -368,8 +368,8 @@ vless://тутследующийключ
             onclick="runUpdate()"
           >⬇️ Обновить веб интерфейс</button>
           <div id="warnings" class="text-danger mb-3"></div>
-          <button><a href="https://yoomoney.ru/to/410012481566554">на ☕️ Юмани</a></button>
-        <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">на ☕️Тинькофф</a></button> </br></br>
+          <button><a href="https://yoomoney.ru/to/410012481566554">₽ на ☕️ Юмани</a></button>
+        <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">₽ на ☕️ Тинькофф</a></button> </br></br>
 
         <div class="d-flex gap-2 mb-3">
           <button
@@ -428,7 +428,7 @@ vless://тутследующийключ
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Установка на Кинетик</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">✖️</button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">❌</button>
       </div>
       <div class="modal-body">
         <pre
@@ -437,6 +437,8 @@ vless://тутследующийключ
           style="white-space: pre-wrap;"
         >Ожидание...</pre>
         <div class="text-end mt-3">
+          <p>Поддержать разработчика рублем: <button><a href="https://yoomoney.ru/to/410012481566554">₽ на ☕️ Юмани</a></button>
+        <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">₽ на ☕️ Тинькофф</a></button></p>
           <button
             id="recheckBtn"
             class="btn btn-outline-primary d-none"
@@ -1019,10 +1021,11 @@ function installAll() {
                              ? "\n✅ Proxy0 работает!"
                              : "\n❌ Proxy0 не работает, нажмите кнопку ниже для повторения проверки.") +
                              "\n🛡️ OpkgTun IP: " + data.proxy_ip +
-                           ((data.proxy_ip && data.opkgtun_ip_ip !== data.external_ip)
+                           ((data.proxy_ip && data.opkgtun_ip !== data.external_ip)
                              ? "\n✅ OpkgTun0 работает!"
                              : "\n❌ OpkgTun0 не работает, нажмите кнопку ниже для повторения проверки.") +
-                           "\n💳Если хочешь чтобы обновления выходили быстрее поддержи рублем, дав стимул разработчику фиксить баги и выпускать обновления быстрее\n🎉 Установка завершена!";
+                           "\n💳Если хочешь чтобы обновления выходили быстрее поддержи рублем по кнопкам с кофе ниже, дав стимул разработчику фиксить баги и выпускать обновления быстрее:" +
+                           "\n🎉 Установка завершена!";
         document.getElementById("recheckBtn").classList.remove("d-none");
       })
       .catch(e => out.textContent += "\n❌ Ошибка при установке config.json:\n" + e);
