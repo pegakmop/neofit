@@ -975,7 +975,7 @@ function installAll() {
       'ndmc -c "no interface Proxy0" >/dev/null 2>&1',
       'ndmc -c "system configuration save" >/dev/null 2>&1',
       'ndmc -c "interface Proxy0" >/dev/null 2>&1',
-      `ndmc -c "interface Proxy0 description NeoFit-Proxy0-${routerIp}:1080" >/dev/null 2>&1`,
+      `ndmc -c "interface Proxy0 description NeoFit-SingBox-Proxy0-${routerIp}:1080" >/dev/null 2>&1`,
       'ndmc -c "interface Proxy0 proxy protocol socks5" >/dev/null 2>&1',
       'ndmc -c "interface Proxy0 proxy socks5-udp" >/dev/null 2>&1',
       `ndmc -c "interface Proxy0 proxy upstream ${routerIp} 1080" >/dev/null 2>&1`,
