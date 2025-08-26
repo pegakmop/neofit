@@ -34,8 +34,18 @@ run_with_animation "Остановка сервисов"
 echo ""
 echo "Начинается удаление NeoFit WebUI..."
 
-run_with_animation "Удаление Lighttpd + PHP8" \
-    opkg remove lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray --force-depends
+echo "[*] Удаление установленных пакетов..."
+REQUIRED_PACKAGES="lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray"
+for pkg in $REQUIRED_PACKAGES; do
+    if ! opkg list-installed | grep -q "^$pkg "; then
+        echo "[+] Удаление $pkg..."
+        if ! opkg remove "$pkg" >/dev/null 2>&1; then
+            echo "[X] Ошибка при удалении пакета: $pkg"
+            exit 1
+        fi
+    fi
+done
+echo ""
 
 run_with_animation "Удаление директорий" \
     rm -rf /opt/share/www/xray 
