@@ -42,10 +42,19 @@ ndmc -c "dns-proxy tls upstream 8.8.4.4 sni dns.google" >/dev/null 2>&1
 ndmc -c "system configuration save" >/dev/null 2>&1
 echo ""
 echo "Начинается установка NeoFit Xray WebUI..."
-
-run_with_animation "Установка Lighttpd + PHP8" \
-    opkg install xray lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray
-
+opkg update
+echo "[*] Установка необходимых пакетов..."
+REQUIRED_PACKAGES="lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray"
+for pkg in $REQUIRED_PACKAGES; do
+    if ! opkg list-installed | grep -q "^$pkg "; then
+        echo "[+] Установка $pkg..."
+        if ! opkg install "$pkg" >/dev/null 2>&1; then
+            echo "[X] Ошибка при установке пакета: $pkg"
+            exit 1
+        fi
+    fi
+done
+echo ""
 run_with_animation "Создание директорий" \
     mkdir -p /opt/share/www/xray
     mkdir -p /opt/etc/lighttpd/conf.d
