@@ -39,7 +39,7 @@ REQUIRED_PACKAGES="lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-re
 for pkg in $REQUIRED_PACKAGES; do
     if ! opkg list-installed | grep -q "^$pkg "; then
         echo "[+] Удаление $pkg..."
-        if ! opkg remove "$pkg" >/dev/null 2>&1; then
+        if ! opkg remove "$pkg" --force-depends >/dev/null 2>&1; then
             echo "[X] Ошибка при удалении пакета: $pkg"
             exit 1
         fi
