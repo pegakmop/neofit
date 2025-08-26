@@ -44,15 +44,16 @@ echo ""
 echo "Начинается установка NeoFit Xray WebUI..."
 
 run_with_animation "Установка Lighttpd + PHP8" \
-    opkg install lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray
+    opkg install xray lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi xray
 
 run_with_animation "Создание директорий" \
-    mkdir -p /opt/share/www/xray /opt/etc/lighttpd/conf.d
+    mkdir -p /opt/share/www/xray
+    mkdir -p /opt/etc/lighttpd/conf.d
 
 run_with_animation "Создание manifest.json" sh -c 'cat > /opt/share/www/xray/manifest.json <<EOF
 {
-  "name": "NeoFit",
-  "short_name": "NeoFit",
+  "name": "NeoFit xray",
+  "short_name": "NeoFit xray",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1b2434",
@@ -69,8 +70,8 @@ run_with_animation "Создание index.php" sh -c '
 curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/xray/index.php -o /opt/share/www/xray/index.php
 '
 run_with_animation "Загрузка иконок" sh -c '
-curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/180x180.png -o /opt/share/www/hrneo/180x180.png
-curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/apple-touch-icon.png -o /opt/share/www/hrneo/apple-touch-icon.png
+curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/180x180.png -o /opt/share/www/xray/180x180.png
+curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/apple-touch-icon.png -o /opt/share/www/xray/apple-touch-icon.png
 '
 
 run_with_animation "Настройка Lighttpd" sh -c 'cat > /opt/etc/lighttpd/conf.d/80-xray.conf <<EOF
