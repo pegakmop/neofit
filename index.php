@@ -272,10 +272,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="controls">
       <button><a href="https://yoomoney.ru/to/410012481566554">на ☕️ Юмани</a></button>
       <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">на ☕️Тинькофф</a></button>
-      <button onclick="addInterface()">🆕Создать</button>
-      <button onclick="showUploadDialog()">🆒Просмотреть</button>
-      <button onclick="generateConfig()">🆗Сгенерировать</button>
-      <button onclick="saveConfig()">🆙Сохранить</button>
+      <button onclick="addInterface()">🆕Добавить новый прокси</button>
+      <button hidden onclick="showUploadDialog()">🆒Просмотреть</button>
+      <button onclick="generateConfig()">🆗Сгенерировать конфиг</button>
+      <button onclick="saveConfig()">🆙Сохранить на Keenetic</button>
     </div>
     <div id="warnings"></div>
     <div id="interfacesContainer"></div>
