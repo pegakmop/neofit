@@ -1,90 +1,113 @@
 <?php
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
+
     $input = file_get_contents('php://input');
     $path  = '/opt/etc/xray/config.json';
 
-    if (!$input) {
-        http_response_code(400);
-        echo json_encode(["error" => "Пустой запрос"]);
+    // helper для ответов в одном стиле
+    $respond = function(string $status, array $payload = [], int $http_code = 200) {
+        http_response_code($http_code);
+        echo json_encode(array_merge([
+            'status' => $status,             // ok | action_required | error | warning
+        ], $payload), JSON_UNESCAPED_UNICODE);
         exit;
+    };
+
+    if (!$input) {
+        $respond('error', [
+            'error'   => 'empty_request',
+            'message' => 'Пустой запрос',
+        ], 400);
     }
 
-    // 0) Проверка и создание каталога для файла
+    // 0) Проверка/создание каталога для файла
     $dir = dirname($path);
     if (!is_dir($dir)) {
         if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
-            http_response_code(500);
-            echo json_encode(["error" => "Не удалось создать каталог: {$dir}"]);
-            exit;
+            $respond('error', [
+                'error'   => 'mkdir_failed',
+                'message' => "Не удалось создать каталог: {$dir}"
+            ], 500);
         }
     }
     if (!is_writable($dir)) {
-        http_response_code(500);
-        echo json_encode(["error" => "Нет прав на запись в каталог: {$dir}"]);
-        exit;
+        $respond('error', [
+            'error'   => 'dir_not_writable',
+            'message' => "Нет прав на запись в каталог: {$dir}"
+        ], 500);
     }
 
     // 1) Проверка наличия компонента proxy
     $proxyOk = false;
     for ($i = 0; $i < 3; $i++) {
-        $out = shell_exec('ndmc -c "components list" 2>&1') ?? '';
+        $out   = shell_exec('ndmc -c "components list" 2>&1') ?? '';
         $lines = preg_split('/\r?\n/', $out) ?: [];
         foreach ($lines as $idx => $line) {
             if (stripos($line, 'name: proxy') !== false) {
                 $slice = array_slice($lines, $idx, 16);
                 foreach ($slice as $sl) {
-                    if (stripos($sl, 'installed:') !== false) {
-                        $proxyOk = true;
-                        break 2;
-                    }
+                    if (stripos($sl, 'installed:') !== false) { $proxyOk = true; break 2; }
                 }
             }
         }
         if ($proxyOk) break;
-        usleep(1111111);
+        usleep(1111111); // ~1.11s
     }
+
     if (!$proxyOk) {
-        // добавляем компонент в установщик и выходим
+        // добавляем компонент в установщик и выходим с единообразным уведомлением
         $log = [];
-        foreach ([
+        $cmds = [
             'ndmc -c components',
             'ndmc -c "components install proxy"',
             'ndmc -c "components commit"',
-            'ndmc -c "system configuration save"'
-        ] as $c) {
-            $log[] = "» $c\n" . shell_exec($c . ' 2>&1');
+            'ndmc -c "system configuration save"',
+        ];
+        foreach ($cmds as $c) {
+            $log[] = [
+                'cmd'    => $c,
+                'output' => shell_exec($c . ' 2>&1')
+            ];
         }
-        header('Content-Type: text/plain; charset=utf-8');
-        echo "❌ Компонент proxy не установлен.\n"
-           . "🧩 Добавлен в установщик, подтвердите установку в веб-интерфейсе Keenetic.\n"
-           . implode("\n", $log);
-        exit;
+
+        $respond('action_required', [
+            'step'    => 'proxy_component',
+            'message' => "Компонент «proxy» не установлен. Я добавил его в установщик. " .
+                         "Зайдите в веб-интерфейс Keenetic → Параметры системы → Изменить набор компонентов → Обновить KeeneticOS, " .
+                         "подтвердите установку и повторите попытку.",
+            'logs'    => $log
+        ]);
     }
 
-    // 2) Определение IP роутера автоматически по br0
+    // 2) Определение IP роутера по br0 (если не нашли — фолбэк)
     $host = trim(shell_exec("ip -4 -o addr show br0 2>/dev/null | awk '{print \$4}' | cut -d/ -f1 | head -n1"));
     if ($host === '' || $host === null) {
-        // если не нашли адрес на br0, оставляем как в старом коде
         $host = '192.168.1.1';
     }
 
     // 3) Сохраняем Xray-конфиг
-    if (file_put_contents($path, $input) === false) {
-        http_response_code(500);
-        echo json_encode(["error" => "Не удалось записать конфиг"]);
-        exit;
+    $configSaved = file_put_contents($path, $input) !== false;
+    if (!$configSaved) {
+        $respond('error', [
+            'step'    => 'write_config',
+            'message' => 'Не удалось записать конфиг',
+            'path'    => $path
+        ], 500);
     }
 
     // 4) Выполняем ndmc-команды для каждого inbound
-    $cfg  = json_decode($input, true);
+    $cfg = json_decode($input, true);
+    $interfaces = [];
     if (isset($cfg['inbounds']) && is_array($cfg['inbounds'])) {
         foreach ($cfg['inbounds'] as $inb) {
             if (!isset($inb['tag'], $inb['port'])) continue;
-            $tag   = $inb['tag'];
-            $port  = $inb['port'];
+
+            $tag    = $inb['tag'];                 // e.g. "socks-in-socks0"
+            $port   = (int)$inb['port'];           // e.g. 1080
             preg_match('/(\d+)$/', $tag, $m);
-            $n     = $m[1] ?? '0';
+            $n      = $m[1] ?? '0';
             $ifName = "Proxy{$n}";
 
             $cmds = [
@@ -97,31 +120,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "ndmc -c \"interface {$ifName} up\"",
                 "ndmc -c \"interface {$ifName} ip global 1\""
             ];
+
+            $cmdLogs = [];
             foreach ($cmds as $c) {
+                $out = [];
+                $code = 0;
                 exec($c . ' 2>&1', $out, $code);
+                $cmdLogs[] = ['cmd' => $c, 'exit_code' => $code, 'output' => implode("\n", $out)];
             }
+
+            $interfaces[] = [
+                'interface' => $ifName,
+                'tag'       => $tag,
+                'port'      => $port,
+                'upstream'  => ['host' => $host, 'port' => $port],
+                'logs'      => $cmdLogs
+            ];
         }
-        exec('ndmc -c "system configuration save" 2>&1');
+
+        // сохранить системную конфигурацию роутера
+        $saveCfgOut = [];
+        $saveCfgCode = 0;
+        exec('ndmc -c "system configuration save" 2>&1', $saveCfgOut, $saveCfgCode);
     }
 
-    // 5) Перезапускаем Xray
+    // 5) Перезапускаем Xray (и чётко сообщаем результат)
+    $out2 = [];
+    $code2 = 0;
     exec('/opt/etc/init.d/S24xray restart 2>&1', $out2, $code2);
+    $xrayRestartOk = ($code2 === 0);
 
-    header('Content-Type: application/json; charset=utf-8');
-    if ($code2 === 0) {
-        echo json_encode([
-            "status" => "ok",
-            "message" => "✅ Конфиг сохранен, интерфейсы добавлены, upstream: {$host}, Xray перезапущен"
-        ]);
-    } else {
-        echo json_encode([
-            "status" => "warning",
-            "message" => "⚠️ Ошибка при сохранении/создании интерфейсов/перезапуске Xray",
-            "output" => $out2
-        ]);
-    }
-    exit;
+    // Единый финальный ответ
+    $respond($xrayRestartOk ? 'ok' : 'warning', [
+        'message' => $xrayRestartOk
+            ? "✅ Конфиг сохранён, интерфейсы добавлены, Xray перезапущен"
+            : "⚠️ Конфиг сохранён и интерфейсы добавлены, но Xray не перезапустился",
+        'proxy_component' => 'ok',
+        'write_config'    => ['ok' => true, 'path' => $path],
+        'interfaces'      => [
+            'count' => count($interfaces),
+            'upstream_host' => $host,
+            'items' => $interfaces
+        ],
+        'xray_restart'    => [
+            'ok' => $xrayRestartOk,
+            'exit_code' => $code2,
+            'output' => implode("\n", $out2)
+        ]
+    ]);
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="ru">
