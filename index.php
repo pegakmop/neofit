@@ -74,9 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $respond('action_required', [
             'step'    => 'proxy_component',
-            'message' => "Компонент «Клиент прокси» в системе не установлен. Я добавил его в установщик. " .
+            'message' => "Компонент «proxy» не установлен. Я добавил его в установщик. " .
                          "Зайдите в веб-интерфейс Keenetic → Параметры системы → Изменить набор компонентов → Обновить KeeneticOS, " .
-                         "подтвердите установку, роутер перезагрузится и повторите попытку.",
+                         "подтвердите установку и повторите попытку.",
             'logs'    => $log
         ]);
     }
@@ -272,10 +272,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="controls">
       <button><a href="https://yoomoney.ru/to/410012481566554">на ☕️ Юмани</a></button>
       <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">на ☕️Тинькофф</a></button>
-      <button onclick="addInterface()">🆕Добавить новый прокси</button>
+      <button onclick="addInterface()">🆕Добавить интерфейс</button>
       <button hidden onclick="showUploadDialog()">🆒Просмотреть</button>
       <button onclick="generateConfig()">🆗Сгенерировать конфиг</button>
-      <button onclick="saveConfig()">🆙Сохранить на Keenetic</button>
+      <button onclick="saveConfig()">🆙Сохранить на роутер</button>
     </div>
     <div id="warnings"></div>
     <div id="interfacesContainer"></div>
@@ -342,12 +342,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'trash-btn';
-      deleteBtn.innerHTML = '🗑️';
-      deleteBtn.title = 'Удалить ссылку';
-      deleteBtn.onclick = () => { linkField.remove(); isConfigModified = true; };
+      //deleteBtn.innerHTML = '🗑️';
+      //deleteBtn.title = 'Удалить ссылку';
+      //deleteBtn.onclick = () => { linkField.remove(); isConfigModified = true; };
 
       linkField.appendChild(input);
-      linkField.appendChild(deleteBtn);
+      //linkField.appendChild(deleteBtn);
       container.appendChild(linkField);
     }
 
