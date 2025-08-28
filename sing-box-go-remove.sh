@@ -26,6 +26,7 @@ rm -rf /opt/etc/init.d/S99sing-box-neofit-opkgtun
 rm -rf /opt/etc/init.d/S80lighttpd
 rm -rf /opt/bin/neofitweb
 rm -rf /opt/etc/sing-box
+rm -rf /opt/etc/sing-box-go
 ndmc -c "no interface Proxy0" >/dev/null 2>&1
 ndmc -c "no interface OpkgTun0" >/dev/null 2>&1
 ndmc -c "system configuration save" >/dev/null 2>&1
