@@ -110,7 +110,7 @@ if [ -f "$INDEX_FILE" ]; then
 fi
 echo ""
 echo "[*] Создание нового index.php..."
-curl -sL https://raw.githubusercontent.com/pegakmop/pegakmop.github.io/refs/heads/sing-box/index.php -o /opt/share/www/sing-box/index.php
+curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/index.php -o /opt/share/www/sing-box/index.php
 echo "[*] Добавление в автозагрузку..."
 curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/S99neofit -o /opt/etc/init.d/S99neofit
 echo ""
