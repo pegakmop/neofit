@@ -6,12 +6,12 @@
 
 Установить на роутер можно командой:
 ```
-curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
+curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/sing-box-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
 Удалить с роутера можно командой:
 ```
-curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
+curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/sing-box-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
 
 
-[Установить на сервер можно командой](https://github.com/pegakmop/neofit/blob/main/xray-vless-server-install.md)
+[Установить на сервер можно командой](https://github.com/pegakmop/neofit/blob/sing-box/xray-vless-server-install.md)
