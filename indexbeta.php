@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($input['run_update'])) {
         $out = shell_exec(
             'curl -sL "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/indexbeta.php" '
-          . '-o /opt/share/www/sing-box/index.php 2>&1'
+          . '-o /opt/share/www/sing-box-go/index.php 2>&1'
         );
         echo json_encode([
             'message' => '✔ NeoFit WebUI установил обновления. Перезагружаю веб страницу. Вы можете теперь угостить меня ☕️ кофе, заодно поддержав этим стимул фиксить баги и выпускать обновления быстрее, с помощью кнопок юмани или Тинькофф ссылки. Приятного использования.',
@@ -349,8 +349,9 @@ ss://тутпервыйключ
 vless://тутследующийключ
           "></textarea>
         </div>
-
+        
         <div class="form-check mb-3">
+        <p><button onclick="window.open('http://pegakmop.site', '_blank')"> Веб маршрутизация по доменам, прошивка KeeneticOS alpha 5.10+ </button></p>
           <input
             class="form-check-input"
             type="checkbox"
@@ -358,7 +359,8 @@ vless://тутследующийключ
             checked
           >
           <label class="form-check-label" for="includeClashApi">
-            <button id="goTo9090Btn" class="btn btn-sm btn-outline-primary d-none" onclick="goTo9090()"> Веб интерфейс Sing-Box </button>
+            <p><button id="goTo9090Btn" class="btn btn-sm btn-outline-primary d-none" onclick="goTo9090()"> Веб интерфейс Sing-Box </button></p>
+            
 
           </label>
         </div>
@@ -368,8 +370,10 @@ vless://тутследующийключ
             onclick="runUpdate()"
           >⬇️ Обновить веб интерфейс</button>
           <div id="warnings" class="text-danger mb-3"></div>
-          <button><a href="https://yoomoney.ru/to/410012481566554">₽ на ☕️ Юмани</a></button>
-        <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">₽ на ☕️ Тинькофф</a></button> </br></br>
+          <button onclick="window.open('https://yoomoney.ru/to/410012481566554', '_blank')"> ₽ на ☕️ Юмани </button>
+          <button onclick="window.open('https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936', '_blank')"> ₽ на ☕️ Тинькофф </button>
+          </br></br>
+          
 
         <div class="d-flex gap-2 mb-3">
           <button
@@ -781,110 +785,148 @@ vless://тутследующийключ
     }
 
     function generateConfig() {
-      const routerIp       = document.getElementById("router").value.trim();
-      const proxyLinks     = document.getElementById("links").value.trim().split('\n').filter(l => l.trim());
-      const includeClash   = document.getElementById("includeClashApi").checked;
-      const resultDiv      = document.getElementById("result");
-      const warningsDiv    = document.getElementById("warnings");
-      const downloadLink   = document.getElementById("downloadBtn");
-      const copyBtn        = document.getElementById("copyBtn");
-      const resultWrapper  = document.getElementById("resultWrapper");
+    const routerIp       = document.getElementById("router").value.trim();
+    const proxyLinks     = document.getElementById("links").value.trim().split('\n').filter(l => l.trim());
+    const includeClash   = document.getElementById("includeClashApi").checked;
+    const resultDiv      = document.getElementById("result");
+    const warningsDiv    = document.getElementById("warnings");
+    const downloadLink   = document.getElementById("downloadBtn");
+    const copyBtn        = document.getElementById("copyBtn");
+    const resultWrapper  = document.getElementById("resultWrapper");
 
-      warningsDiv.innerHTML = '';
-      resultWrapper.classList.add("d-none");
-      downloadLink.classList.add("d-none");
-      copyBtn.classList.add("d-none");
+    warningsDiv.innerHTML = '';
+    resultWrapper.classList.add("d-none");
+    downloadLink.classList.add("d-none");
+    copyBtn.classList.add("d-none");
 
-      if (!routerIp) {
+    if (!routerIp) {
         warningsDiv.innerHTML = "Ошибка: IP роутера обязателен";
         return;
-      }
-      if (proxyLinks.length === 0) {
+    }
+    if (proxyLinks.length === 0) {
         warningsDiv.innerHTML = "Ошибка: нужен хотя бы один ключ";
         return;
-      }
+    }
 
-      const outbounds = [];
-      const tags      = [];
-      const warns     = [];
+    const outbounds = [];
+    const tags      = [];
+    const warns     = [];
 
-      proxyLinks.forEach(line => {
+    proxyLinks.forEach(line => {
         let cfg = null;
-        if (line.startsWith("ss://"))      cfg = parseSS(line);
-        else if (line.startsWith("vless://")) cfg = parseVLESS(line);
-        else if (line.startsWith("vmess://")) cfg = parseVMess(line);
+        if (line.startsWith("ss://"))        cfg = parseSS(line);
+        else if (line.startsWith("vless://"))  cfg = parseVLESS(line);
+        else if (line.startsWith("vmess://"))  cfg = parseVMess(line);
         else if (line.startsWith("trojan://")) cfg = parseTrojan(line);
         else if (line.startsWith("tuic://"))   cfg = parseTUIC(line);
 
+        // конфиг сборка
         if (cfg) {
-          outbounds.push(cfg);
-          if (["vless","vmess","trojan","tuic"].includes(cfg.type)) {
-            tags.push(cfg.tag);
-          }
+            outbounds.push(cfg);
+            if (["vless","vmess","trojan","tuic","shadowsocks"].includes(cfg.type)) {
+                tags.push(cfg.tag);
+            }
         } else {
-          warns.push(`Не удалось распарсить: ${line}`);
+            warns.push(`Возможно не удалось распарсить либо распарсили с ошибкой: ${line}`);
         }
-      });
+    });
 
-      if (tags.length) {
+    // расширенные группы при наличии прокси
+    if (tags.length) {
         outbounds.unshift({
-          type: "selector",
-          tag: "select",
-          outbounds: tags,
-          default: tags[0],
-          interrupt_exist_connections: false
+            type: "urltest",
+            tag: "auto",
+            outbounds: tags,
+            url: "http://www.gstatic.com/generate_204",
+            interval: "30s",
+            tolerance: 50
         });
-      }
-      outbounds.push(
-        { type: "direct", tag: "direct" },
-        { type: "block",  tag: "block"  }
-      );
+        outbounds.unshift({
+            type: "selector",
+            tag: "select",
+            outbounds: [...tags, "direct"],
+            default: tags[0],
+            interrupt_exist_connections: false
+        });
+        outbounds.unshift({
+            type: "selector",
+            tag: "main",
+            outbounds: ["auto", "select"],
+            default: "auto",
+            interrupt_exist_connections: false
+        });
+        outbounds.unshift({
+            type: "selector",
+            tag: "udp443-allow-and-deny",
+            outbounds: ["block", "main"],
+            default: "block",
+            interrupt_exist_connections: false
+        });
+    }
 
-      const config = {
+    outbounds.push(
+        { type: "direct", tag: "direct" },
+        { type: "block",  tag: "block" }
+    );
+
+    const config = {
         experimental: { cache_file: { enabled: true } },
         log: { level: "debug", timestamp: true },
         inbounds: [
-          {
-            type: "tun",
-            tag: "opkgtun0",
-            interface_name: "opkgtun0",
-            address: "172.16.250.1/30",
-            domain_strategy: "ipv4_only",
-            endpoint_independent_nat: true,
-            mtu: 9000,
-            stack: "gvisor",
-            auto_route: false,
-            strict_route: false,
-            sniff: true,
-            sniff_override_destination: false
-          },
-          {
-            type: "mixed",
-            tag: "mixed-in",
-            listen: "0.0.0.0",
-            listen_port: 1080,
-            sniff: true,
-            sniff_override_destination: false
-          }
+            {
+                type: "tun",
+                tag: "opkgtun0",
+                interface_name: "opkgtun0",
+                address: ["172.16.250.1/30"],
+                domain_strategy: "ipv4_only",
+                endpoint_independent_nat: true,
+                mtu: 1500,
+                stack: "gvisor",
+                auto_route: false,
+                strict_route: false,
+                route_address: ["0.0.0.0/1","128.0.0.0/1","::/1","8000::/1"],
+                sniff: true,
+                sniff_override_destination: false,
+                route_exclude_address: ["192.168.0.0/16"],
+                platform: {
+                    http_proxy: {
+                        enabled: false,
+                        server: "127.0.0.1",
+                        server_port: 8888,
+                        bypass_domain: [],
+                        match_domain: []
+                    }
+                },
+                udp_timeout: "5m"
+            },
+            {
+                type: "mixed",
+                tag: "mixed-in",
+                listen: "0.0.0.0",
+                listen_port: 1080,
+                sniff: true,
+                sniff_override_destination: false
+            }
         ],
         outbounds,
         route: {
-          auto_detect_interface: false,
-          final: tags.length ? "select" : "direct",
-          rules: [
-            { network: "udp", port: 443, outbound: "block" }
-          ]
+            auto_detect_interface: false,
+            final: tags.length ? "main" : "direct",
+            rules: [
+                { network: "udp", port: 443, outbound: tags.length ? "udp443-allow-and-deny" : "block" }
+            ]
         }
-      };
+    };
 
-      if (includeClash) {
+    if (includeClash) {
         config.experimental.clash_api = {
-          external_controller: `${routerIp}:9090`,
-          external_ui: "ui",
-          access_control_allow_private_network: true
+            external_controller: `${routerIp}:9090`,
+            external_ui: "ui",
+            access_control_allow_private_network: true
         };
-      }
+    }
 
+    
       const jsonStr = JSON.stringify(config, null, 2);
       resultDiv.textContent = jsonStr;
       resultWrapper.classList.remove("d-none");
