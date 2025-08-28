@@ -94,8 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Запуск обновления интерфейса
     if (isset($input['run_update'])) {
         $out = shell_exec(
-            'curl -sL "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/indexbeta.php" '
-          . '-o /opt/share/www/sing-box-go/index.php 2>&1'
+            'curl -sL "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/indexbeta.php" '
+          . '-o /opt/share/www/sing-box/index.php 2>&1'
         );
         echo json_encode([
             'message' => '✔ NeoFit WebUI установил обновления. Перезагружаю веб страницу. Вы можете теперь угостить меня ☕️ кофе, заодно поддержав этим стимул фиксить баги и выпускать обновления быстрее, с помощью кнопок юмани или Тинькофф ссылки. Приятного использования.',
