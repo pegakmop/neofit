@@ -57,6 +57,7 @@ run_with_animation "Удаление директорий и настроек" \
     sh -c 'rm -rf /opt/share/www/sing-box; \
            rm -rf /opt/etc/lighttpd; \
            rm -rf /opt/etc/sing-box; \
+           rm -rf /opt/etc/sing-box-go; \
            ndmc -c "no interface Proxy0" >/dev/null 2>&1; \
            ndmc -c "system configuration save" >/dev/null 2>&1'
 
