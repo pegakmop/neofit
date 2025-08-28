@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Запуск обновления интерфейса
     if (isset($input['run_update'])) {
         $out = shell_exec(
-            'curl -sL "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/indexbeta.php" '
+            'curl -sL "https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/index.php" '
           . '-o /opt/share/www/sing-box-go/index.php 2>&1'
         );
         echo json_encode([
