@@ -6,11 +6,11 @@
 
 Установить на роутер можно командой:
 ```
-curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
+curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-install.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
 Удалить с роутера можно командой:
 ```
-curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
+curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 ```
 
 
