@@ -1,11 +1,11 @@
 #!/bin/sh
 # === Installer NeoFit by @pegakmop ===
 
-HRNEO_DIR="/opt/share/www/sing-box-go"
+HRNEO_DIR="/opt/share/www/sing-box"
 INDEX_FILE="$HRNEO_DIR/index.php"
 MANIFEST_FILE="$HRNEO_DIR/manifest.json"
 LIGHTTPD_CONF_DIR="/opt/etc/lighttpd/conf.d"
-LIGHTTPD_CONF_FILE="$LIGHTTPD_CONF_DIR/80-sing-box-go.conf"
+LIGHTTPD_CONF_FILE="$LIGHTTPD_CONF_DIR/80-sing-box.conf"
 ip_addres=$(ip addr show br0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
 echo "Отказ от ответственности:"
 echo ""
@@ -54,7 +54,7 @@ if ! opkg update >/dev/null 2>&1; then
     echo "[*] Пробуем задать DNS и запустить скрипт заново..."
     ndmc -c "dns-proxy tls upstream 9.9.9.9 sni dns.quad9.net" >/dev/null 2>&1
     ndmc -c "system configuration save" >/dev/null 2>&1
-    curl -o /opt/root/sing-box-go.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-go-install.sh && chmod +x /opt/root/sing-box-go.sh && /opt/root/sing-box-go.sh
+    curl -o /opt/root/sing-box.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/sing-box-install.sh && chmod +x /opt/root/sing-box.sh && /opt/root/sing-box.sh
     exit 1
 fi
 echo ""
@@ -110,9 +110,9 @@ if [ -f "$INDEX_FILE" ]; then
 fi
 echo ""
 echo "[*] Создание нового index.php..."
-curl -sL https://raw.githubusercontent.com/pegakmop/pegakmop.github.io/refs/heads/main/entware/sing-box-go-gen.php -o /opt/share/www/sing-box-go/index.php
+curl -sL https://raw.githubusercontent.com/pegakmop/pegakmop.github.io/refs/heads/sing-box/index.php -o /opt/share/www/sing-box/index.php
 echo "[*] Добавление в автозагрузку..."
-curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/S99neofit -o /opt/etc/init.d/S99neofit
+curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/S99neofit -o /opt/etc/init.d/S99neofit
 echo ""
 if [ -f "$LIGHTTPD_CONF_FILE" ]; then
     echo "[*] Удаление конфигурации Lighttpd..."
@@ -126,7 +126,7 @@ server.username := ""
 server.groupname := ""
 
 $HTTP["host"] =~ "^(.+):8094$" {
-    url.redirect = ( "^/sing-box-go/" => "http://%1:94" )
+    url.redirect = ( "^/sing-box/" => "http://%1:94" )
     url.redirect-code = 301
 }
 
@@ -136,7 +136,7 @@ $SERVER["socket"] == ":94" {
     cgi.assign = ( ".php" => "/opt/bin/php8-cgi" )
     setenv.set-environment = ( "PATH" => "/opt/bin:/usr/bin:/bin" )
     index-file.names = ( "index.php" )
-    url.rewrite-once = ( "^/(.*)" => "/sing-box-go/$1" )
+    url.rewrite-once = ( "^/(.*)" => "/sing-box/$1" )
 }
 EOF
 echo ""
