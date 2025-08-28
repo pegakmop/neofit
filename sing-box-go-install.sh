@@ -154,16 +154,26 @@ echo "[*] NeoFit WebUi для sing-box-go create by @pegakmop installed"
 echo ""
 echo "[*] Перейдите на http://$ip_addres:94"
 echo ""
-echo "Угостить кофем разработчика скинув донат:"
+echo "Установка завершена NeoFit WebUi sing-box-go версии"
+echo ""
+echo "Угостить кофем разработчика можно скинув донат:"
 echo ""
 echo "https://yoomoney.ru/to/410012481566554  кошелек юмани"
+echo ""
 echo "2200700768833807 карта тинькоф"
 echo ""
-sleep 5
+sleep 3
 echo "Канал в телеграм: https://t.me/neofitkeenetic"
 echo ""
-sleep 3
+sleep 5
 echo "Эксклюзивно для обзоров блогера на YouTube, для канала @antenkaru"
 echo "****************************************"
 echo "YouTube ссылка на видео с инструкцией: https://youtu.be/EHmUf2Q9BIw"
+echo "****************************************"
+sleep 5
+echo "****************************************"
+echo "****************************************"
+echo "https://goo.su/Enqdz34 - VPS в Финляндии с 60% скидкой (промокод OFF60)"
+echo "****************************************"
+echo "https://goo.su/QAQFzE9 - VPS в Европе и не только (15% бонус 24 
 echo "****************************************"
