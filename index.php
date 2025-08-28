@@ -171,7 +171,7 @@ SH;
   <div class="container mt-5">
     <div class="card shadow">
       <div class="card-body">
-        <h3 class="card-title mb-4">Конфигуратор Sing-box</h3>
+        <h3 class="card-title mb-4">🌓 NeoFit версия с sing-box-go пакетом</h3>
 
 <div class="mb-3">
   <label for="router" class="form-label">
@@ -211,14 +211,14 @@ window.addEventListener("DOMContentLoaded", () => {
           ></textarea>
         </div>
 
-        <div class="form-check mb-3">
-          <input
+        <div hidden class="form-check mb-3">
+          <input 
             class="form-check-input"
             type="checkbox"
             id="includeClashApi"
             checked
           >
-          <label class="form-check-label" for="includeClashApi">
+          <label hidden class="form-check-label" for="includeClashApi">
             Включить Clash API (веб-интерфейс)
           </label>
         </div>
