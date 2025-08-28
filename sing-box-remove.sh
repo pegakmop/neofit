@@ -37,7 +37,7 @@ echo ""
 echo "Начинается удаление NeoFit WebUI..."
 echo "[*] Удаление установленных пакетов..."
 
-REQUIRED_PACKAGES="lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl sing-box-go jq"
+REQUIRED_PACKAGES="lighttpd lighttpd-mod-cgi lighttpd-mod-setenv lighttpd-mod-redirect lighttpd-mod-rewrite php8 php8-cgi php8-cli php8-mod-curl php8-mod-openssl xray xray-core sing-box-go jq"
 
 for pkg in $REQUIRED_PACKAGES; do
     if opkg list-installed | awk '{print $1}' | grep -qx "$pkg"; then
@@ -57,6 +57,8 @@ run_with_animation "Удаление директорий и настроек" \
     sh -c 'rm -rf /opt/share/www/sing-box; \
            rm -rf /opt/etc/lighttpd; \
            rm -rf /opt/etc/sing-box; \
+           rm -rf /opt/etc/xray; \
+           rm -rf /opt/share/www/xray; \
            rm -rf /opt/share/www/sing-box-go; \
            ndmc -c "no interface Proxy0" >/dev/null 2>&1; \
            ndmc -c "system configuration save" >/dev/null 2>&1'
