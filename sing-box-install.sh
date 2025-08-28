@@ -71,6 +71,8 @@ for pkg in $REQUIRED_PACKAGES; do
 done
 echo ""
 echo "[*] Создание директорий..."
+rm -rf /opt/share/www/sing-box-go
+rm -rf /opt/etc/lighttpd/conf.d/80-sing-box-go.conf
 mkdir -p "$HRNEO_DIR"
 mkdir -p "$LIGHTTPD_CONF_DIR"
 echo ""
@@ -121,16 +123,16 @@ fi
 echo ""
 echo "[*] Создание конфигурации Lighttpd..."
 cat > "$LIGHTTPD_CONF_FILE" << 'EOF'
-server.port := 8095
+server.port := 8094
 server.username := ""
 server.groupname := ""
 
-$HTTP["host"] =~ "^(.+):8095$" {
-    url.redirect = ( "^/sing-box/" => "http://%1:95" )
+$HTTP["host"] =~ "^(.+):8094$" {
+    url.redirect = ( "^/sing-box/" => "http://%1:94" )
     url.redirect-code = 301
 }
 
-$SERVER["socket"] == ":95" {
+$SERVER["socket"] == ":94" {
     server.document-root = "/opt/share/www/"
     server.modules += ( "mod_cgi" )
     cgi.assign = ( ".php" => "/opt/bin/php8-cgi" )
@@ -152,7 +154,7 @@ rm "$0"
 echo ""
 echo "[*] NeoFit WebUi для sing-box-go create by @pegakmop installed"
 echo ""
-echo "[*] Перейдите на http://$ip_addres:95"
+echo "[*] Перейдите на http://$ip_addres:94"
 echo ""
 echo "Угостить кофем разработчика скинув донат:"
 echo ""
