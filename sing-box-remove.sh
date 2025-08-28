@@ -1,6 +1,6 @@
 #!/bin/sh
 # Удаление NeoFit sing-box-go WebUI
-#  curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/sing-box-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
+#  curl -o /opt/root/neofit.sh https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/sing-box-remove.sh && chmod +x /opt/root/neofit.sh && /opt/root/neofit.sh
 # === АНИМАЦИЯ ===
 animation() {
     local pid=$1 message=$2 spin='|/-\' i=0
@@ -54,7 +54,7 @@ echo ""
 
 # Групповые команды под одной анимацией
 run_with_animation "Удаление директорий и настроек" \
-    sh -c 'rm -rf /opt/share/www/sing-box-go; \
+    sh -c 'rm -rf /opt/share/www/sing-box; \
            rm -rf /opt/etc/lighttpd; \
            rm -rf /opt/etc/sing-box; \
            ndmc -c "no interface Proxy0" >/dev/null 2>&1; \
