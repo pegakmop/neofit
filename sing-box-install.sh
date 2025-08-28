@@ -121,16 +121,16 @@ fi
 echo ""
 echo "[*] Создание конфигурации Lighttpd..."
 cat > "$LIGHTTPD_CONF_FILE" << 'EOF'
-server.port := 8094
+server.port := 8095
 server.username := ""
 server.groupname := ""
 
-$HTTP["host"] =~ "^(.+):8094$" {
-    url.redirect = ( "^/sing-box/" => "http://%1:94" )
+$HTTP["host"] =~ "^(.+):8095$" {
+    url.redirect = ( "^/sing-box/" => "http://%1:95" )
     url.redirect-code = 301
 }
 
-$SERVER["socket"] == ":94" {
+$SERVER["socket"] == ":95" {
     server.document-root = "/opt/share/www/"
     server.modules += ( "mod_cgi" )
     cgi.assign = ( ".php" => "/opt/bin/php8-cgi" )
@@ -152,7 +152,7 @@ rm "$0"
 echo ""
 echo "[*] NeoFit WebUi для sing-box-go create by @pegakmop installed"
 echo ""
-echo "[*] Перейдите на http://$ip_addres:94"
+echo "[*] Перейдите на http://$ip_addres:95"
 echo ""
 echo "Угостить кофем разработчика скинув донат:"
 echo ""
@@ -161,9 +161,3 @@ echo "2200700768833807 карта тинькоф"
 echo ""
 sleep 5
 echo "Канал в телеграм: https://t.me/neofitkeenetic"
-echo ""
-sleep 3
-echo "Эксклюзивно для обзоров блогера на YouTube, для канала @antenkaru"
-echo "****************************************"
-echo "YouTube ссылка на видео с инструкцией: https://youtu.be/EHmUf2Q9BIw"
-echo "****************************************"
