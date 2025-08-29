@@ -1,4 +1,5 @@
 <?php
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
 
@@ -138,6 +139,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['error' => 'Ошибка при сохранении файла.']);
             exit;
         }
+        $patchCmd = 'sh -c \'/opt/sbin/ip -4 -o addr show br0 2>/dev/null '
+                  . '| while read -r num if fam addr rest; do echo "${addr%/*}"; done '
+                  . '| head -n1 '
+                  . '| xargs -r -I{} sed -i '
+                  . '-e "s|http://127.0.0.1:9090|http://{}:9090|g" '
+                  . '-e "s|http://:9090|http://{}:9090|g" '
+                  . '/opt/var/lib/sing-box/ui/index.html\'';
+        shell_exec($patchCmd . ' 2>&1');
         $nolink    = shell_exec('/opt/sbin/ip link delete opkgtun0 2>&1');
         sleep(1);
         $restart    = shell_exec('/opt/etc/init.d/S99sing-box restart 2>&1');
