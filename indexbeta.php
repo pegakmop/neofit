@@ -220,6 +220,19 @@ SH;
   >
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 <style>
+/* Mini UI в модалке */
+.cmu-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin: 10px 0; background: var(--card-bg); color: var(--text); }
+.cmu-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.cmu-pill { padding:2px 8px; border:1px solid var(--border); border-radius:999px; }
+.cmu-btn { padding:6px 10px; border-radius:8px; border:1px solid #999; background:#fafafa; cursor:pointer; }
+.cmu-btn.active { border:2px solid #000; font-weight:600; }
+.cmu-optbar { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
+.cmu-good { background:#e6ffe6; }
+.cmu-warn { background:#fffbe6; }
+.cmu-bad  { background:#ffecec; }
+.cmu-table { border-collapse:collapse; width:100%; }
+.cmu-table th, .cmu-table td { border-bottom:1px solid #eee; padding:6px 8px; text-align:left; }
+
   :root {
     --bg: #f8f9fa;
     --text: #212529;
@@ -359,7 +372,7 @@ vless://тутследующийключ
             checked
           >
           <label class="form-check-label" for="includeClashApi">
-            <p><button id="goTo9090Btn" class="btn btn-sm btn-outline-primary d-none" onclick="goTo9090()"> Веб интерфейс Sing-Box </button></p>
+            <p><button id="goTo9090Btn" class="btn btn-sm btn-outline-primary d-none" onclick="goTo9090()"> Веб управление Sing-Box </button></p>
             
 
           </label>
@@ -449,6 +462,22 @@ vless://тутследующийключ
             onclick="recheckProxy()"
           >🔄 Перепроверка работы прокси</button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка Sing-Box UI -->
+<div class="modal fade" id="singboxModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Веб управление Sing-Box</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">❌</button>
+      </div>
+      <div class="modal-body">
+        <!-- сюда смонтируем mini UI -->
+        <div id="singboxApp"></div>
       </div>
     </div>
   </div>
@@ -1195,12 +1224,150 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
   </script>
+
 <script>
 function goTo9090() {
-  const loc = window.location;
-  const newUrl = `${loc.protocol}//${loc.hostname}:9090${loc.pathname}${loc.search}${loc.hash}`;
-  window.open(newUrl, '_blank');
+  const ip = (document.getElementById("router")?.value || "").trim() || location.hostname || "192.168.1.1";
+  const apiBase = `http://${ip}:9090`;
+
+  // показать модалку
+  const modalEl = document.getElementById('singboxModal');
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
+
+  // смонтировать/пересобрать mini UI
+  const mount = document.getElementById('singboxApp');
+  mount.innerHTML = ""; // очистка
+  ClashMiniUI.mount(mount, apiBase);
 }
+
+/* ----------------- Mini UI внутри модалки (только ПРОКСИ) ----------------- */
+const ClashMiniUI = (() => {
+  const sleep = (ms) => new Promise(r=>setTimeout(r,ms));
+  const nonLeaf = new Set(["Selector","URLTest","Fallback","Direct","Reject"]);
+  const isLeaf = (t) => t && !nonLeaf.has(t);
+  const dClass = (ms)=> ms==null?"":(ms<=222?"cmu-good":ms<=333?"cmu-warn":"cmu-bad");
+
+  let API_BASE = "";
+  let delayCache = new Map();
+  let proxiesSnapshot = {};
+
+  async function measureDelay(name){
+    const hit = delayCache.get(name), now=Date.now();
+    if (hit && (now-hit.ts<20000)) return hit.delay;
+    try{
+      const r = await fetch(`${API_BASE}/proxies/${encodeURIComponent(name)}/delay?timeout=5000&url=${encodeURIComponent("https://www.gstatic.com/generate_204")}`);
+      const j = await r.json();
+      const d = typeof j.delay==="number" ? j.delay : null;
+      delayCache.set(name,{delay:d,ts:now});
+      return d;
+    }catch{ return null; }
+  }
+
+  async function switchProxy(group,target,root){
+    await fetch(`${API_BASE}/proxies/${encodeURIComponent(group)}`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:target})
+    });
+    await sleep(200);
+    await renderProxies(root);
+  }
+
+  async function renderProxies(root){
+    const wrap = root.querySelector("#cmu-proxies");
+    wrap.innerHTML = "Загрузка…";
+    try{
+      const res = await fetch(`${API_BASE}/proxies`);
+      const data = await res.json();
+      proxiesSnapshot = data.proxies || {};
+
+      const mainNow = proxiesSnapshot.main?.now === "auto" ? "auto" : "select";
+      const order = ["main", mainNow, mainNow==="auto"?"select":"auto", "udp443-allow-and-deny"];
+
+      const filtered = Object.entries(proxiesSnapshot)
+        .filter(([name,p]) => name!=="GLOBAL" && order.includes(name))
+        .sort((a,b)=> order.indexOf(a[0]) - order.indexOf(b[0]));
+
+      wrap.innerHTML = "";
+      for (const [name,p] of filtered){
+        const card = document.createElement("div");
+        card.className = "cmu-card";
+
+        card.innerHTML = `
+          <div class="cmu-row">
+            <b style="font-size:1.05rem">${name}</b>
+            <span class="cmu-pill">${p.type||""}</span>
+            <span>Текущий: <b>${p.now||"—"}</b></span>
+          </div>
+        `;
+
+        if (Array.isArray(p.all) && p.all.length){
+          const opts = document.createElement("div");
+          opts.className = "cmu-optbar";
+          for (const opt of p.all){
+            const btn = document.createElement("button");
+            btn.className = "cmu-btn";
+            btn.textContent = opt;
+            if (opt===p.now) btn.classList.add("active");
+            btn.onclick = ()=> switchProxy(name,opt,root);
+            opts.appendChild(btn);
+
+            const meta = proxiesSnapshot[opt];
+            if (name!=="udp443-allow-and-deny" && meta && isLeaf(meta.type) && opt!=="direct" && opt!=="block"){
+              measureDelay(opt).then(ms=>{
+                if (ms!=null){
+                  btn.textContent = `${opt} (${ms} ms)`;
+                  btn.classList.add(dClass(ms));
+                }
+              });
+            }
+          }
+          card.appendChild(opts);
+        }
+
+        if (name==="udp443-allow-and-deny"){
+          const t = document.createElement("button");
+          t.className = "cmu-btn";
+          t.style.marginTop = "8px";
+          const next = p.now==="block" ? "main" : "block";
+          t.textContent = (p.now==="block") ? "Включить UDP:443" : "Выключить UDP:443";
+          t.onclick = ()=> switchProxy(name,next,root);
+          card.appendChild(t);
+        }
+
+        wrap.appendChild(card);
+      }
+    }catch(e){
+      wrap.innerHTML = "Ошибка: "+e;
+    }
+  }
+
+  function mount(root, apiBase){
+    API_BASE = apiBase;
+
+    root.innerHTML = `
+      <div class="cmu-card">
+        <div class="cmu-row">
+          <span class="cmu-pill">API: ${API_BASE}</span>
+          <button class="cmu-btn" id="cmu-refresh-proxies">Обновить</button>
+          <button class="cmu-btn" id="cmu-open-web">open Sing-Box Web</button>
+        </div>
+      </div>
+
+      <section id="cmu-proxies-tab">
+        <div id="cmu-proxies"></div>
+      </section>
+    `;
+
+    root.querySelector("#cmu-refresh-proxies").onclick = ()=> renderProxies(root);
+    root.querySelector("#cmu-open-web").onclick = ()=> window.open(API_BASE, "_blank");
+
+    renderProxies(root);
+  }
+
+  return { mount };
+})();
 </script>
 </body>
 </html>
