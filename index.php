@@ -171,7 +171,7 @@ SH;
   <div class="container mt-5">
     <div class="card shadow">
       <div class="card-body">
-        <h3 class="card-title mb-4">🌓 NeoFit версия с sing-box-go пакетом</h3>
+        <h3 class="card-title mb-4">🌓 NeoFit version sing-box-go</h3>
 
 <div class="mb-3">
   <label for="router" class="form-label">
