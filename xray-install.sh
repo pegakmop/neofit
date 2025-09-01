@@ -94,6 +94,7 @@ EOF'
 
 run_with_animation "Создание index.php" sh -c '
 curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/xray/index.php -o /opt/share/www/xray/index.php
+curl -sL https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/sing-box/S99neofit -o /opt/etc/init.d/S99neofit
 '
 run_with_animation "Загрузка иконок" sh -c '
 curl -sL https://raw.githubusercontent.com/pegakmop/hrneo/refs/heads/main/opt/share/www/hrneo/180x180.png -o /opt/share/www/xray/180x180.png
@@ -120,7 +121,11 @@ server.groupname := ""
 }
 EOF'
 
-run_with_animation "Перезапуск Lighttpd" /opt/etc/init.d/S80lighttpd restart
+run_with_animation "Перезапуск Lighttpd" sh -c '
+ln -sf /opt/etc/init.d/S80lighttpd /opt/bin/neofitweb
+/opt/etc/init.d/S80lighttpd restart
+chmod +x /opt/etc/init.d/S99neofit
+'
 
 ip_address=$(ip addr show br0 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -n1)
 echo ""
