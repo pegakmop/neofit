@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             if ($success) break;
-            usleep(1111111); // пауза ~1.11 секунды
+            usleep(3333333); // пауза ~1.11 секунды
         }
 
         if ($success) {
