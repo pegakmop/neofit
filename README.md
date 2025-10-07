@@ -14,7 +14,7 @@ ps | grep neofitxray | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | g
 ``` 
 потом остановить neofitsb
 ```
-ps | grep neofitxray | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | grep neofitxray
+ps | grep neofitsb | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | grep neofitsb
 ```
 проверить состояние остановлен или работает
 ```
