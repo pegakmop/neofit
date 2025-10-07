@@ -16,6 +16,10 @@ ps | grep neofitxray | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | g
 ```
 ps | grep neofitsb | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | grep neofitsb
 ```
+запустить разом оба неофита
+```
+(/opt/bin/neofitxray >/dev/null 2>&1 &) && (/opt/bin/neofitsb >/dev/null 2>&1 &)
+``` 
 остановить все процессы neofit
 ```
 stop="neofit"; ps | grep "$stop" | grep -v grep | awk '{print $1}' | xargs kill -9 2>/dev/null; echo "--- если остановлен должно быть пусто ---"; ps | grep "$stop" | grep -v grep
