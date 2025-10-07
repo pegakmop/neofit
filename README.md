@@ -4,7 +4,23 @@
 ``` 
 /opt/bin/neofitxray >/dev/null 2>&1 &
 ```
+потом остановить neofitxray
+```
+ps | grep neofitxray | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | grep neofitxray
+``` 
 запуск в фоне neofitsb
 ``` 
 /opt/bin/neofitsb >/dev/null 2>&1 &
 ``` 
+потом остановить neofitsb
+```
+ps | grep neofitxray | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | grep neofitxray
+```
+проверить состояние остановлен или работает
+```
+ps | grep neofit | grep -v grep
+```
+узнать pid
+```
+ps | grep neofit | grep -v grep | awk '{print $1}'
+```
