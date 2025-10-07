@@ -18,7 +18,7 @@ ps | grep neofitsb | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | gre
 ```
 запустить разом оба неофита
 ```
-(/opt/bin/neofitxray >/dev/null 2>&1 &) && (/opt/bin/neofitsb >/dev/null 2>&1 &)
+(/opt/bin/neofitxray >/dev/null 2>&1 &) ; (/opt/bin/neofitsb >/dev/null 2>&1 &)
 ``` 
 остановить все процессы neofit
 ```
