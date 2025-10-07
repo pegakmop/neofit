@@ -22,7 +22,7 @@ ps | grep neofitsb | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | gre
 ``` 
 остановить все процессы neofit
 ```
-stop="neofit"; ps | grep "$stop" | grep -v grep | awk '{print $1}' | xargs kill -9 2>/dev/null; echo "--- если остановлен должно быть пусто ---"; ps | grep "$stop" | grep -v grep
+stop="neofit"; ps | grep "$stop" | grep -v grep | awk '{print $1}' | xargs kill -9 2>/dev/null; echo "---если остановлен должно быть пусто---"; ps | grep "$stop" | grep -v grep
 ```
 проверить состояние остановлен или работает
 ```
