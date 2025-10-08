@@ -1,5 +1,11 @@
 # neofit
-
+init.d скрипт автозапуска с командой neofit
+```
+curl -o /opt/etc/init.d/S69neofit https://raw.githubusercontent.com/pegakmop/neofit/main/opt/etc/init.d/S69neofit
+ls -la /opt/etc/init.d/S69neofit
+chmod +x /opt/etc/init.d/S69neofit
+/opt/etc/init.d/S69neofit
+```
 запуск в фоне neofitxray
 ``` 
 /opt/bin/neofitxray >/dev/null 2>&1 &
