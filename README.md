@@ -1,7 +1,7 @@
 # neofit
 init.d скрипт автозапуска веб интерфейсов с командой **neofit** и аргументами {**start**|**stop**|**restart**|**status**}
 ```
-curl -o /opt/etc/init.d/S69neofit https://raw.githubusercontent.com/pegakmop/neofit/main/opt/etc/init.d/S69neofit
+curl -o /opt/etc/init.d/S69neofit https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/opt/etc/init.d/S69neofit
 ls -la /opt/etc/init.d/S69neofit
 chmod +x /opt/etc/init.d/S69neofit
 ls -la /opt/etc/init.d/S69neofit
