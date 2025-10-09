@@ -13,11 +13,11 @@
 ```
 opkg update && opkg install curl && curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 ```
-Добавление neofit xray:
+Установка neofit xray:
 ```
 opkg install neofitxray
 ```
-Добавление neofit sing box:
+Установка neofit sing box:
 ```
 opkg install neofitsb
 ```
@@ -29,8 +29,8 @@ opkg remove neofitxray
 ```
 opkg remove neofitsb
 ``` 
-# полезная информация
-init.d скрипт автозапуска веб интерфейсов с командами: **nfsb** и **nfxray** с аргументами {**start**|**stop**|**restart**|**status**} либо если вы привыкли пользоваться полными путями:
+# полезная информация о командах пакетов:
+init.d скрипт автозапуска веб интерфейсов с командами: **nfsb** и **nfxray** и с аргументами {**start**|**stop**|**restart**|**status**} либо если вы привыкли пользоваться полными путями:
 запуск в фоне neofit xray
 ``` 
 /opt/etc/init.d/S69neofitxray restart
