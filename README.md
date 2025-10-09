@@ -1,5 +1,9 @@
 # neofit от создателя проекта pegakmop
 
+# neofit ресурсы
+канал: [https://t.me/neofitkeenetic](https://t.me/neofitkeenetic)
+чат: [https://t.me/neofitkeenetic](https://t.me/neofitkeeneticchat)
+бот: [https://t.me/neofitkeeneticbot](https://t.me/neofitkeeneticbot)
 # установка и запуск или удаление
 ```
 curl -o /opt/root/neofit-create-by-pegakmop https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-create-by-pegakmop.sh
