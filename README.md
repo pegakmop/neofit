@@ -1,53 +1,57 @@
-# neofit от создателя проекта pegakmop
+# neofit xray & neofit sing box от создателя проекта @pegakmop
 
 # neofit ресурсы
 канал: [https://t.me/neofitkeenetic](https://t.me/neofitkeenetic)
 чат: [https://t.me/neofitkeenetic](https://t.me/neofitkeeneticchat)
 бот: [https://t.me/neofitkeeneticbot](https://t.me/neofitkeeneticbot)
-# установка и запуск или удаление
+# установка и запуск или удаление:
+Добавление репозитория:
 ```
-curl -o /opt/root/neofit-create-by-pegakmop https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-create-by-pegakmop.sh
-chmod +x /opt/root/neofit-create-by-pegakmop
-/opt/root/neofit-create-by-pegakmop
+opkg update && opkg install curl && curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
+```
+Добавление neofit xray:
+```
+opkg install neofitxray
+```
+Добавление neofit sing box:
+```
+opkg install neofitsb
+```
+Удаление neofit xray:
+```
+opkg remove neofitxray
+```
+Удаление neofit sing box:
+```
+opkg remove neofitsb
 ``` 
 # полезная информация
-init.d скрипт автозапуска веб интерфейсов с командой **neofit** и аргументами {**start**|**stop**|**restart**|**status**}
-```
-curl -o /opt/etc/init.d/S69neofit https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/opt/etc/init.d/S69neofit
-ls -la /opt/etc/init.d/S69neofit
-chmod +x /opt/etc/init.d/S69neofit
-ls -la /opt/etc/init.d/S69neofit
-/opt/etc/init.d/S69neofit
-```
-запуск в фоне neofitxray
+init.d скрипт автозапуска веб интерфейсов с командами: **nfsb** и **nfxray** с аргументами {**start**|**stop**|**restart**|**status**} либо если вы привыкли пользоваться полными путями:
+запуск в фоне neofit xray
 ``` 
-/opt/bin/neofitxray >/dev/null 2>&1 &
+/opt/etc/init.d/S69neofitxray restart
 ```
-потом остановить neofitxray
+потом остановить neofit xray
 ```
-ps | grep neofitxray | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | grep neofitxray
+/opt/etc/init.d/S69neofitxray stop
 ``` 
-запуск в фоне neofitsb
+запуск в фоне neofit sing box
 ``` 
-/opt/bin/neofitsb >/dev/null 2>&1 &
+/opt/etc/init.d/S69neofitsb restart
 ``` 
-потом остановить neofitsb
+потом остановить neofit sing box
 ```
-ps | grep neofitsb | grep -v grep | awk '{print $1}' | xargs kill -9 && ps | grep neofitsb
+/opt/etc/init.d/S69neofitsb restart
 ```
-запустить разом оба неофита
+запустить разом neofit sing box и neofit xray
 ```
-(/opt/bin/neofitxray >/dev/null 2>&1 &) ; (/opt/bin/neofitsb >/dev/null 2>&1 &)
+/opt/etc/init.d/S69neofitxray restart && /opt/etc/init.d/S69neofitsb restart
 ``` 
-остановить все процессы neofit
+остановить все процессы neofit sing box и neofit xray
 ```
-stop="neofit"; ps | grep "$stop" | grep -v grep | awk '{print $1}' | xargs kill -9 2>/dev/null; echo "---если остановлен должно быть пусто---"; ps | grep "$stop" | grep -v grep
+/opt/etc/init.d/S69neofitxray stop && /opt/etc/init.d/S69neofitsb stop
 ```
-проверить состояние остановлен или работает
+проверить состояние остановлен или работает neofit sing box и neofit xray
 ```
-ps | grep neofit | grep -v grep
-```
-узнать pid
-```
-ps | grep neofit | grep -v grep | awk '{print $1}'
+/opt/etc/init.d/S69neofitxray status && /opt/etc/init.d/S69neofitsb status
 ```
