@@ -8,6 +8,8 @@
 
 Наш бот: [https://t.me/neofitkeeneticbot](https://t.me/neofitkeeneticbot)
 
+Поддержать развитие рублем для автора: [https://yoomoney.ru/to/410012481566554](https://yoomoney.ru/to/410012481566554)
+
 # установка и запуск или удаление:
 Добавление нашего репозитория:
 ```
