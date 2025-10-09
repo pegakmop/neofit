@@ -30,7 +30,11 @@ opkg remove neofitxray
 Удаление neofit sing box:
 ```
 opkg remove neofitsb
-``` 
+```
+# Как получать обновления?
+```
+opkg update && opkg upgrade
+```
 # полезная информация о командах пакетов:
 init.d скрипт автозапуска веб интерфейсов с командами: **nfsb** и **nfxray** и с аргументами {**start**|**stop**|**restart**|**status**} либо если вы привыкли пользоваться полными путями:
 запуск в фоне neofit xray
