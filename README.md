@@ -1,11 +1,15 @@
 # neofit xray & neofit sing box от создателя проекта @pegakmop
 
-# neofit ресурсы
-канал: [https://t.me/neofitkeenetic](https://t.me/neofitkeenetic)
-чат: [https://t.me/neofitkeenetic](https://t.me/neofitkeeneticchat)
-бот: [https://t.me/neofitkeeneticbot](https://t.me/neofitkeeneticbot)
+# neofit оффициальные ресурсы:
+
+Наш канал: [https://t.me/neofitkeenetic](https://t.me/neofitkeenetic)
+
+Наш чат: [https://t.me/neofitkeenetic](https://t.me/neofitkeeneticchat)
+
+Наш бот: [https://t.me/neofitkeeneticbot](https://t.me/neofitkeeneticbot)
+
 # установка и запуск или удаление:
-Добавление репозитория:
+Добавление нашего репозитория:
 ```
 opkg update && opkg install curl && curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 ```
