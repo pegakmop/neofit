@@ -1,4 +1,12 @@
-# neofit
+# neofit от создателя проекта pegakmop
+
+# установка и запуск или удаление
+```
+curl -o /opt/root/neofit-create-by-pegakmop https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/neofit-create-by-pegakmop.sh
+chmod +x /opt/root/neofit-create-by-pegakmop
+/opt/root/neofit-create-by-pegakmop
+``` 
+# полезная информация
 init.d скрипт автозапуска веб интерфейсов с командой **neofit** и аргументами {**start**|**stop**|**restart**|**status**}
 ```
 curl -o /opt/etc/init.d/S69neofit https://raw.githubusercontent.com/pegakmop/neofit/refs/heads/main/opt/etc/init.d/S69neofit
