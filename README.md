@@ -15,6 +15,10 @@
 ```
 opkg update && opkg install curl && curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 ```
+Установка neofit xray & sing-box-go:
+```
+opkg install neofit
+```
 Установка neofit xray:
 ```
 opkg install neofitxray
@@ -22,6 +26,10 @@ opkg install neofitxray
 Установка neofit sing box:
 ```
 opkg install neofitsb
+```
+Удаление neofit xray & sing-box-go:
+```
+opkg remove neofit
 ```
 Удаление neofit xray:
 ```
