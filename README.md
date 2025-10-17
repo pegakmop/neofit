@@ -47,27 +47,45 @@ NeoFit создан для владельцев роутеров **Keenetic**, �
 
 ## 🔧 Установка и обновление
 
-### Добавление репозитория
+### Рекомендация от автора ставьте сторонние DoT DNS к примеру вот пара-тройка.
+
+**Keenetic Cli по 22 порту и логину паролю роктера**
+```
+dns-proxy tls upstream 9.9.9.9 sni dns.quad9.net
+dns-proxy tls upstream 8.8.8.8 sni dns.google
+dns-proxy tls upstream 77.88.8.8 sni common.dot.dns.yandex.net
+system configuration save
+```
+**Entware по 222 порту, логин root и пароль keenetic по умолчанию**
+```
+ndmc -c "dns-proxy tls upstream 9.9.9.9 sni dns.quad9.net"
+ndmc -c "dns-proxy tls upstream 8.8.8.8 sni dns.google"
+ndmc -c "dns-proxy tls upstream 77.88.8.8 sni common.dot.dns.yandex.net"
+ndmc -c "system configuration save"
+```
+**Так же доступна легкая установка Entware на ваш Keenetic с помощью бота автора [@entware](https://t.me/entwarebot/?startapp&addToHomeScreen) на внутреннюю память без заморочек, а вот внешний usb носитель перед установкой нужно форматировать в ext4 перед установкой enware**
+
+### Добавление репозитория 
 ```
 opkg update && opkg install curl && curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 ```
 
-### Установка
+### Установка пакета
 ```
 opkg install neofit
 ```
 
-### Удаление
+### Удаление пакета
 ```
 opkg remove neofit
 ```
 
-### Обновление
+### Обновление пакета
 ```
 opkg update && opkg upgrade
 ```
 
-### если не появилось обновление
+### если вдруг не появилось обновление пакета
 ```
 rm -rf /opt/var/opkg-list/pegakmop && opkg update
 ```
