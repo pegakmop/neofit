@@ -89,7 +89,7 @@ opkg update && opkg upgrade
 
 ### если вдруг не появилось обновление пакета
 ```
-rm -rf /opt/var/opkg-list/pegakmop && opkg update
+rm -rf /opt/var/opkg-lists/pegakmop && opkg update
 ```
 ---
 
