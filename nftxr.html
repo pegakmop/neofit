@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>NeoFit xRay</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      --bg: #1e1e1e;
+      --fg: #c9d1d9;
+      --border: #555;
+      --card: #282c34;
+      --btn: #444;
+      --btnfg: #fff;
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    h1 {
+      text-align: center;
+      margin: 0 0 24px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    button {
+      background: var(--btn);
+      color: var(--btnfg);
+      border: none;
+      border-radius: 20px;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+    .interface-container {
+      border: 1px solid var(--border);
+      background: var(--card);
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+    }
+    .interface-header {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--card);
+      color: var(--fg);
+    }
+    .link-field {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .config-display {
+      border: 1px solid var(--border);
+      background: var(--card);
+      padding: 10px;
+      border-radius: 6px;
+      max-height: 60vh;
+      overflow: auto;
+    }
+    #warnings {
+      color: #ff6b6b;
+      margin-top: 8px;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .back-btn {
+      background: #555;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button class="back-btn" onclick="location.href='/'">← Назад</button>
+  </div>
+
+  <h1>NeoFit xRay</h1>
+
+  <div class="controls">
+    <button><a href="https://yoomoney.ru/to/410012481566554">на ☕️ Юмани</a></button>
+    <button><a href="https://www.tinkoff.ru/rm/seroshtanov.aleksey9/HgzXr74936">на ☕️Тинькофф</a></button>
+    <button onclick="addInterface()">🆕Добавить интерфейс</button>
+    <button onclick="generateConfig()">🆗Сгенерировать конфиг</button>
+    <button onclick="saveConfig()">🆙Сохранить на роутер</button>
+  </div>
+
+  <div id="warnings"></div>
+  <div id="interfacesContainer"></div>
+
+  <div id="configDisplay" class="config-display" style="display:none;">
+    <pre><code id="output" class="language-json"></code></pre>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+  <script>
+    let config = {}, interfaceCount = 0;
+
+    function addInterface() {
+      interfaceCount++;
+      const container = document.createElement('div');
+      container.className = 'interface-container';
+      container.id = 'interface-' + interfaceCount;
+
+      const header = document.createElement('div');
+      header.className = 'interface-header';
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '🗑️';
+      delBtn.title = 'Удалить интерфейс';
+      delBtn.onclick = () => container.remove();
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'Название интерфейса (например, Proxy0)';
+      nameInput.value = 'Proxy' + (interfaceCount - 1);
+      nameInput.maxLength = 20;
+
+      header.appendChild(delBtn);
+      header.appendChild(nameInput);
+      container.appendChild(header);
+
+      const linksContainer = document.createElement('div');
+      linksContainer.className = 'links-container';
+      container.appendChild(linksContainer);
+
+      document.getElementById('interfacesContainer').appendChild(container);
+      addLinkField(linksContainer);
+    }
+
+    function addLinkField(container) {
+      const row = document.createElement('div');
+      row.className = 'link-field';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'vless://... vmess://... trojan://... ss://... socks://...';
+      row.appendChild(input);
+      container.appendChild(row);
+    }
+
+    function pickIndexFromName(name, fallbackIdx) {
+      const m = String(name || '').match(/(\d+)$/);
+      return m ? parseInt(m[1], 10) : fallbackIdx;
+    }
+
+    function parseVlessLinkForXray(link) {
+      const match = link.match(/vless:\/\/([^@]+)@([^:]+):(\d+)\/?(?:\?([^#]*))?(?:#(.*))?/);
+      if (!match) return null;
+      const uuid = match[1];
+      const server = match[2];
+      const server_port = parseInt(match[3], 10);
+      const params = new URLSearchParams(match[4] || "");
+      const tag = decodeURIComponent(match[5] || "").trim() || `vless-${server}-${server_port}`;
+      const outbound = {
+        protocol: "vless",
+        settings: {
+          vnext: [{
+            address: server,
+            port: server_port,
+            users: [{
+              id: uuid,
+              encryption: params.get("encryption") || "none",
+              flow: params.get("flow") || ""
+            }]
+          }]
+        },
+        streamSettings: {
+          network: params.get("type") || "tcp",
+          security: params.get("security") || "none"
+        },
+        tag: tag
+      };
+      if (outbound.streamSettings.security === "tls") {
+        outbound.streamSettings.tlsSettings = {
+          serverName: params.get("sni") || server,
+          alpn: ["h2", "http/1.1"]
+        };
+      } else if (outbound.streamSettings.security === "reality") {
+        outbound.streamSettings.realitySettings = {
+          publicKey: params.get("pbk") || "",
+          fingerprint: params.get("fp") || "chrome",
+          serverName: params.get("sni") || server,
+          shortId: params.get("sid") || "",
+          spiderX: params.get("path") || "/"
+        };
+      }
+      const transportType = params.get("type") || "tcp";
+      if (transportType === "ws") {
+        outbound.streamSettings.wsSettings = {
+          path: params.get("path") || "/",
+          headers: { Host: params.get("host") || server }
+        };
+      }
+      return outbound;
+    }
+
+    function parseVmessLinkForXray(link) {
+      try {
+        const b64 = link.replace('vmess://', '');
+        const json = JSON.parse(atob(b64.replace(/-/g, '+').replace(/_/g, '/')));
+        return {
+          protocol: "vmess",
+          settings: {
+            vnext: [{
+              address: json.add,
+              port: parseInt(json.port, 10),
+              users: [{
+                id: json.id,
+                alterId: json.aid ? parseInt(json.aid, 10) : 0,
+                security: json.scy || "auto"
+              }]
+            }]
+          },
+          streamSettings: {
+            network: json.net || "tcp",
+            security: json.tls === "tls" ? "tls" : "none",
+            tlsSettings: json.tls === "tls" ? { serverName: json.sni || json.add } : undefined
+          },
+          tag: json.ps || `vmess-${json.add}-${json.port}`
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function parseTrojanLinkForXray(link) {
+      const match = link.match(/trojan:\/\/([^@]+)@([^:]+):(\d+)(?:\?([^#]*))?(?:#(.*))?/);
+      if (!match) return null;
+      const password = match[1];
+      const server = match[2];
+      const server_port = parseInt(match[3], 10);
+      const params = new URLSearchParams(match[4] || "");
+      const tag = decodeURIComponent(match[5] || "").trim() || `trojan-${server}-${server_port}`;
+      return {
+        protocol: "trojan",
+        settings: {
+          servers: [{ address: server, port: server_port, password }]
+        },
+        streamSettings: {
+          network: "tcp",
+          security: params.get("sni") ? "tls" : "none",
+          tlsSettings: params.get("sni") ? { serverName: params.get("sni") } : undefined
+        },
+        tag: tag
+      };
+    }
+
+    function parseShadowsocksLinkForXray(link) {
+      try {
+        let url = link.replace('ss://', '');
+        let tag = url.includes('#') ? decodeURIComponent(url.split('#')[1]) : '';
+        url = url.split('#')[0];
+        const [userinfo, hostinfo] = url.includes('@') ? url.split('@') : [atob(url), ""];
+        const [method, password] = userinfo.includes(':') ? userinfo.split(':') : [userinfo, ""];
+        const [server, port] = hostinfo.split(':');
+        return {
+          protocol: "shadowsocks",
+          settings: {
+            servers: [{ address: server, port: parseInt(port, 10), method, password }]
+          },
+          tag: tag || `ss-${server}-${port}`
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function parseSocksLinkForXray(link) {
+      const match = link.match(/socks:\/\/(?:([^:]+):([^@]+)@)?([^:]+):(\d+)(?:#(.*))?/);
+      if (!match) return null;
+      const username = match[1] || "";
+      const password = match[2] || "";
+      const server = match[3];
+      const server_port = parseInt(match[4], 10);
+      const tag = decodeURIComponent(match[5] || "").trim() || `socks-${server}-${server_port}`;
+      return {
+        protocol: "socks",
+        settings: {
+          servers: [{
+            address: server,
+            port: server_port,
+            users: username ? [{ user: username, pass: password }] : []
+          }]
+        },
+        tag: tag
+      };
+    }
+
+    function parseLink(link) {
+      if (link.startsWith('vless://')) return parseVlessLinkForXray(link);
+      if (link.startsWith('vmess://')) return parseVmessLinkForXray(link);
+      if (link.startsWith('trojan://')) return parseTrojanLinkForXray(link);
+      if (link.startsWith('ss://')) return parseShadowsocksLinkForXray(link);
+      if (link.startsWith('socks://')) return parseSocksLinkForXray(link);
+      return null;
+    }
+
+    function generateConfig() {
+      const cfg = {
+        log: { loglevel: "none" },
+        inbounds: [],
+        outbounds: [],
+        routing: { rules: [] }
+      };
+
+      const usedTags = new Set(), usedPorts = new Set();
+      const interfaces = document.querySelectorAll('.interface-container');
+
+      interfaces.forEach((ic, idx) => {
+        const rawName = (ic.querySelector('.interface-header input[type="text"]')?.value || '').trim();
+        const n = pickIndexFromName(rawName, idx);
+        const tagInbound = ('proxy' + n).toLowerCase();
+        let listen_port = 2080 + n;
+        while (usedPorts.has(listen_port)) listen_port++;
+        usedPorts.add(listen_port);
+
+        cfg.inbounds.push({
+          protocol: "socks",
+          port: listen_port,
+          tag: tagInbound,
+          settings: { auth: "noauth", udp: true }
+        });
+
+        const links = ic.querySelectorAll('.links-container input[type="text"]');
+        for (const inp of links) {
+          const raw = (inp.value || '').trim();
+          if (!raw) continue;
+          const o = parseLink(raw);
+          if (!o) continue;
+          if (!usedTags.has(o.tag)) {
+            cfg.outbounds.push(o);
+            usedTags.add(o.tag);
+          }
+          cfg.routing.rules.push({
+            type: "field",
+            inboundTag: [tagInbound],
+            outboundTag: o.tag
+          });
+          break;
+        }
+      });
+
+      cfg.outbounds.push({ protocol: "freedom", tag: "direct" });
+      cfg.outbounds.push({ protocol: "blackhole", tag: "blocked" });
+
+      config = cfg;
+
+      const out = document.getElementById('output');
+      out.textContent = JSON.stringify(config, null, 2);
+      if (window.hljs) hljs.highlightElement(out);
+      document.getElementById('configDisplay').style.display = 'block';
+    }
+
+    function saveConfig() {
+      const warn = document.getElementById('warnings');
+      if (!config || !config.inbounds || !config.inbounds.length) {
+        warn.innerHTML = '❌Нет конфигурации для сохранения';
+        return;
+      }
+      fetch('/api/xray', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config, null, 2)
+      })
+        .then(r => r.json())
+        .then(d => alert(d.message || 'Готово'))
+        .catch(e => {
+          console.error(e);
+          alert('Ошибка при отправке конфига');
+        });
+    }
+  </script>
+
+</body>
+</html>
