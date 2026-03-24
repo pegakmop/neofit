@@ -83,7 +83,7 @@ curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 
 ### Проверка установился ли репозиторий
 ```
-ls /opt/var/opkg-lists/pegakmop
+ls /opt/var/opkg-lists
 ``` 
 
 ### Установка пакета
