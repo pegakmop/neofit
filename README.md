@@ -101,23 +101,26 @@ opkg update && opkg upgrade
 rm -rf /opt/var/opkg-lists/pegakmop && opkg update
 ```
 ### если с веба не установился xray или sing box
-#Установка xray
+Установка xray
 ```
 opkg install xray
 ```
-#Установка sing box
+Установка sing box
 ```
 opkg install sing-box-go
 ```
-#Удаление xray
+Удаление xray
 ```
 opkg remove xray xray-core
 ```
-#Удаление sing box
+Удаление sing box
 ```
 opkg remove sing-box-go
 ```
-
+### проверка установились ли пакеты из репозитория
+```
+opkg list-installed 2>/dev/null | grep xray && opkg list-installed 2>/dev/null | grep sing-box-go && opkg list-installed 2>/dev/null | grep neofit
+``` 
 ---
 
 ## 🚀 Управление сервисами
