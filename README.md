@@ -82,6 +82,7 @@ curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 ```
 
 ### Проверка установился ли репозиторий
+в списке появится либо pegakmop либо neofit
 ```
 ls /opt/var/opkg-lists
 ``` 
