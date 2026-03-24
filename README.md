@@ -68,15 +68,15 @@ ndmc -c "system configuration save"
 **Так же доступна легкая установка Entware на ваш Keenetic с помощью бота автора [@entware](https://t.me/entwarebot/?startapp&addToHomeScreen) на внутреннюю память без заморочек, а вот внешний usb носитель перед установкой нужно форматировать в ext4 перед установкой enware**
 
 ### Добавление репозитория 
-#Обновление списка пакетов
+Обновление списка пакетов
 ```
 opkg update
 ```
-#Установка curl
+Установка curl
 ```
 opkg install curl
 ```
-#Добавление репозитория
+Добавление репозитория(при успешном добавлении напишет что установка репозитория завершена)
 ``` 
 curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 ```
@@ -106,7 +106,7 @@ opkg update && opkg upgrade
 ```
 rm -rf /opt/var/opkg-lists/pegakmop && opkg update
 ```
-### если с веба не установился xray или sing box
+### если с веба не установился xray или sing box пакет
 Установка xray
 ```
 opkg install xray
