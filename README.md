@@ -81,6 +81,11 @@ opkg install curl
 curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
 ```
 
+### Проверка установился ли репозиторий
+```
+ls /opt/var/opkg-lists/pegakmop
+``` 
+
 ### Установка пакета
 ```
 opkg install neofit
