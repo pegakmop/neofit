@@ -78,7 +78,7 @@ opkg install curl
 ```
 Добавление репозитория(при успешном добавлении напишет что установка репозитория завершена)
 ``` 
-curl -Ls "http://www.pegakmop.site/release/keenetic/opkg.sh" | sh
+curl -Ls "https://pegakmop.github.io/release/keenetic/opkg.sh" | sh
 ```
 
 ### Проверка установился ли репозиторий
@@ -104,7 +104,7 @@ opkg update && opkg upgrade
 
 ### если вдруг не появилось обновление пакета
 ```
-rm -rf /opt/var/opkg-lists/pegakmop && opkg update
+rm -rf /opt/var/opkg-lists/neofit && rm -rf /opt/var/opkg-lists/pegakmop && opkg update
 ```
 ### если с веба не установился xray или sing box пакет
 Установка xray
