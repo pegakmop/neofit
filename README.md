@@ -72,9 +72,9 @@ ndmc -c "system configuration save"
 ```
 opkg update
 ```
-Установка curl
+Установка curl и wget-ssl
 ```
-opkg install curl
+opkg install curl wget-ssl
 ```
 Добавление репозитория(при успешном добавлении напишет что установка репозитория завершена)
 ``` 
